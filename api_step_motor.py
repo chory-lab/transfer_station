@@ -52,12 +52,32 @@ def index():
         direction = string_to_bool[request.form['direction']]
         
         #hit boxes
-        step_num = int(request.form['step_num'])
-        step_delay = float(request.form['step_delay'])
+        try:
+            step_num = int(request.form['step_num'])         
+        except:
+            step_num = 1000000000000
+            
+        try:
+            step_delay = float(request.form['step_delay'])
+        except:
+            step_delay = 0.0005
+        
+        #step_num = int(request.form['step_num'])
+        #step_delay = float(request.form['step_delay'])
         
         #button
         if request.form.get('run_motor') == 'Run Motor':
             string = move_test(direction, step_num, step_delay)
+            return render_template('buttons.html')
+        
+        #go left till end button
+        if request.form.get('go_left') == 'Go Left':
+            string = move_test(False, step_num, step_delay)
+            return render_template('buttons.html')
+        
+        #go right till end button
+        if request.form.get('go_right') == "Go Right":
+            string = move_test(True, step_num, step_delay)
             return render_template('buttons.html')
         
     elif request.method == 'GET':        
