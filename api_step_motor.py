@@ -12,7 +12,7 @@ import redis
 import A4988
     
 print(__name__)
-app = Flask(__name__, template_folder = '/home/pi/Programs/templates')
+app = Flask(__name__, template_folder = '/home/git/transfer_station/templates')
 app.config['CACHE_TYPE'] = 'RedisCache' 
 cache = Cache(app)
 
@@ -96,5 +96,5 @@ def move_test(direction, step_num, step_delay):
         
         return "Motor Running"
     
-# if __name__ == '__main__':
-#     app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=5000)
