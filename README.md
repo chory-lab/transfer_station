@@ -8,9 +8,15 @@ The system is setup in such a way where the majority of the fucntional code is i
 In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary to utilize a A4988 controller, and the python file of the same name holds all the function definitions utilized in api_step_motor.py and the microswitches, and handles the connection between the Raspberry Pi 4 and the stepper motor on the rail.
 
 <h3>Installations</h3>
-* Install flask: pip install --upgrdae Flask (make sure it is ver 2.2.2 or newer otherwise --app feature won't work)
-* Install reddis: pip install redis
-* Install flask_caching: pip install flask_caching
+
+* Install flask (make sure it is ver 2.2.2 or newer otherwise --app feature won't work, check this by running flask --version):
+  > pip install --upgrade Flask 
+
+* Install reddis:
+  > pip install redis
+
+* Install flask_caching:
+  > pip install flask_caching
 
 <h3>Setup (Skip if setup already running)</h3>
 The first step is to get start the flask and redis server, the redis server handling multiple calls at the same time to allow asynchronous running of the code. 
@@ -18,13 +24,14 @@ The first step is to get start the flask and redis server, the redis server hand
 1. Activate the Virtual Environment
   
   * Navigate to the location of the code and activate the virtual environment:
-    * cd /home/git/transfer_station
-    * source foobar/bin/activate
+    > cd /home/git/transfer_station
+    
+    > source foobar/bin/activate
 
 2. In another terminal, start the redis server<br>
 
-  * redis-server
+  > redis-server
 
 3. Finally run the code through flask (on the previously setup virtual environment) and open the link (first one is on local machine, second is on different machine on the same network
 
-  * flask --app api_step_motor run --host=0.0.0.0
+  > flask --app api_step_motor run --host=0.0.0.0
