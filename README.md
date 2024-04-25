@@ -30,8 +30,8 @@ The first step is to get start the flask and redis server, the redis server hand
 
 2. In another terminal, start the redis server<br>
 
-  > redis-server
+    > redis-server
 
 3. Finally run the code through flask (on the previously setup virtual environment) and open the link (first one is on local machine, second is on different machine on the same network
 
-  > flask --app api_step_motor run --host=0.0.0.0
+    > flask --app api_step_motor run --host=0.0.0.0
