@@ -10,32 +10,33 @@ In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary 
 <h3>Installations</h3>
 
 * Install flask (make sure it is ver 2.2.2 or newer otherwise --app feature won't work, check this by running flask --version):
-  > pip install --upgrade Flask 
+  
+    ```pip install --upgrade Flask ```
 
 * Install reddis:
-  > pip install redis
+
+    ```pip install redis```
 
 * Install flask_caching:
-  > pip install flask_caching
+  
+    ```pip install flask_caching```
 
 <h3>Setup (Skip if setup already running)</h3>
 The first step is to get start the flask and redis server, the redis server handling multiple calls at the same time to allow asynchronous running of the code. 
 <br><br>
+
 1. Activate the Virtual Environment
-  
-  * Navigate to the location of the code and activate the virtual environment:
-    > cd /home/git/transfer_station
+    - Navigate to the location of the virtual environment:
     
-    > source foobar/bin/activate
+      ```cd /home/git/transfer_station```
+    - Activate the virtual environment:
+    
+      ```source foobar/bin/activate```
+    
+2. In another terminal, start the redis server:
+   
+    ```redis-server```  
 
-2. In another terminal, start the redis server<br>
+4. Run the code through flask (on the previously setup virtual environment) and open the outputted link (first one is for the local machine, second is for a different machine on the same wifi):
 
-    > redis-server
-
-3. Find the ip address (inet) in the second paragraph of the result from running the following command:
-
-  > ifconfig
-
-5. Finally run the code through flask (on the previously setup virtual environment) and open the link (first one is on local machine, second is on different machine on the same network
-
-    > flask --app api_step_motor run --host=0.0.0.0
+    ```flask --app api_step_motor run --host=0.0.0.0```
