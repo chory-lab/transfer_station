@@ -1,3 +1,7 @@
+[comment]: <> (Author: Benjamin Pyatski)
+[comment]: <> (Company: Chory Lab)
+
+
 <h1>Introduction</h1>
 This repository holds the code (and previously used test code) for the functioning of the transfer system, or just the step motor rail. There are two parts to this README detailing the software components, and the hardware components of the transfer station system.
 
