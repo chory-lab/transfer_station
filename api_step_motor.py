@@ -1,12 +1,6 @@
 #Author: Benjamin Pyatski
 #Company: Chory Lab
 
-#to add flask respository 
-#export FLASK_APP=name.py
-
-#to run code
-#flask --app api_step_motor run
-
 import os
 from flask import Flask, render_template, request, jsonify
 import RPi.GPIO as GPIO
