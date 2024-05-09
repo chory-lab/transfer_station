@@ -1,3 +1,6 @@
+#Author: Benjamin Pyatski
+#Company: Chory Lab
+
 from flask import Flask, render_template, request, jsonify
 import RPi.GPIO as GPIO
 import time
@@ -47,90 +50,7 @@ my_motor.motor_go(True, # True=Clockwise, False=Counter-Clockwise
                 True, # True = print verbose output 
                 0.05) # initial delay [sec]
 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 1500, # number of steps
-#                 0.00045, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0,
-#                 stop_motor) # initial delay [sec]
-# 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 1500, # number of steps
-#                 0.0004, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0,
-#                 stop_motor) # initial delay [sec]
-# 
-# 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 1500, # number of steps
-#                 0.00035, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0,
-#                 stop_motor) # initial delay [sec]
-# 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 20000, # number of steps
-#                 0.0003, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0,
-#                 stop_motor) # initial delay [sec]
-
-
-
-# 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 1000, # number of steps
-#                 0.00035, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0) # initial delay [sec]
-# 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#             "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#             20000, # number of steps
-#             0.0003, # step delay [sec]
-#             True, # True = print verbose output 
-#             0) # initial delay [sec]
-
 end = time.time()
 print(end-start)
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 5000, # number of steps
-#                 0.00025, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0) # initial delay [sec]
-
-
-
-# 
-# my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 20000, # number of steps
-#                 0.0005, # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0) # initial delay [sec]
-
-
-# for i in range(2):
-#     my_motor.motor_go(clockwise, # True=Clockwise, False=Counter-Clockwise
-#                 "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                 10000*i, # number of steps
-#                 0.001/(10**i), # step delay [sec]
-#                 True, # True = print verbose output 
-#                 0.001) # initial delay [sec]
-
-#my_motor.motor_go(direction, # True=Clockwise, False=Counter-Clockwise
-#                "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
-#                6000, # number of steps
-#                0.0001, # step delay [sec]
-#                True, # True = print verbose output 
-#                .05) # initial delay [sec]
-
 
 GPIO.output(EN_pin,GPIO.HIGH)
