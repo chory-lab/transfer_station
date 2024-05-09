@@ -1,8 +1,5 @@
-#to add flask respository 
-#export FLASK_APP=name.py
-
-#to run code
-#flask --app api_step_motor run
+#Author: Benjamin Pyatski
+#Company: Chory Lab
 
 from flask import Flask, render_template, request, jsonify
 import RPi.GPIO as GPIO
@@ -61,9 +58,6 @@ def index():
             step_delay = float(request.form['step_delay'])
         except:
             step_delay = 0.000000005
-        
-        #step_num = int(request.form['step_num'])
-        #step_delay = float(request.form['step_delay'])
         
         #button
         if request.form.get('run_motor') == 'Run Motor':
