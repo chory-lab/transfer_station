@@ -57,7 +57,7 @@ The transfer station consists of a step motor rail connected through a motor dri
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/a2e29e91-b305-4fbc-8b5c-8c84075bc933)
 
 <h3>Transfer Station System</h3>
-The system is composed of 4 core components, these consist of the tray, tray platform, step motor rail system, and the mount.
+The system is composed of 4 core components, these consist of the tray, tray platform, step motor rail system, and the mount. All components were printed with PLA plastic, and default 3D printer settings. Screws used were the default ones that come with the Hamilton Star, and the default bolts that came with the incubator mount. 
 
 <h4>Tray</h4>
 This is holds the 96 well plate (or equivalent size) when delivering the plate to the incubator, and vice versa.
@@ -84,3 +84,4 @@ The final assembly consists of screwing the mount onto the incubator, then screw
 
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/5c06eda0-1139-4632-b7d7-214fcca2a171)
 
+![IMG_2489](https://github.com/chory-lab/transfer_station/assets/69654071/6cb466e3-b27b-4c4f-b220-d72cb4b66d85)
