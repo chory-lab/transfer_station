@@ -57,19 +57,25 @@ The system is composed of 4 core components, these consist of the tray, tray pla
 
 <h4>Tray</h4>
 This is holds the 96 well plate (or equivalent size) when delivering the plate to the incubator, and vice versa.
+
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/5e6d066a-dbb4-403d-9bdd-c4cc44f140a3)
 
 <h4>Tray Platform</h4>
 This raises the tray to the needed height for the incubator to be able to reach the plate.
+
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/3565bda2-becf-4eeb-828e-3ba721c507a8)
 
 <h4>Stepper Motor Rail System</h4>
 This comprises of a stepper motor, connected to a rail system (screw) that spins moving a cart that is already on the screw.
+
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/2178c803-b7bc-447f-a207-de881839ab26)
 
 <h4>Mount</h4>
 This is what the stepper motor rail system is screwed onto connecting/supporting the stepper motor rail system on the incubator.
+
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/741e2487-255b-4564-998c-046b475df2dc)
 
 <h4>Assembly</h4>
-![image](https://github.com/chory-lab/transfer_station/assets/69654071/4e042a44-07b6-45de-b6c5-819b20a8b7cb)
+The final assembly consists of screwing the mount onto the incubator, then screwing the stepper motor rail system to the mount, screwing the tray platform onto the stepper motor rail system, and then finally attaching the tray onto the tray platform by sliding the two circular mounts on the tray platform into the holes on the tray.
+
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/efbe3aa6-5773-4725-8d5d-f140b0767e20)
