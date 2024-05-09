@@ -5,11 +5,12 @@ import redis
 
 GPIO.setmode(GPIO.BCM)
 
-switch_pin = 4 #microswitch pin
-GPIO.setup(switch_pin, GPIO.IN) #set switch as input
+#commented out for instance where switches are used and connectd to GPIO pins 4 and 17
+#switch_pin = 4 #microswitch pin
+#GPIO.setup(switch_pin, GPIO.IN) #set switch as input
 
-switch_pin_2 = 17
-GPIO.setup(switch_pin_2, GPIO.IN)
+#switch_pin_2 = 17
+#GPIO.setup(switch_pin_2, GPIO.IN)
 
 string_to_bool = {'True':True, 'False': False, None: None}
 
@@ -116,21 +117,14 @@ class A4988Nema(object):
             self.resolution_set(steptype)
             time.sleep(initdelay)
 
-#             for i in range(steps):
-#                 if self.stop_motor:
-#                     raise StopMotorInterrupt
-#                 else:
-#                     GPIO.output(self.step_pin, True)
-#                     time.sleep(stepdelay)
-#                     GPIO.output(self.step_pin, False)
-#                     time.sleep(stepdelay)
-#                     if verbose:
-#                         print("Steps count {}".format(i+1), end="\r", flush=True)
-            
             #not(string_to_bool[r.get('motor_stop')]) and 
             for i in range(steps):
                 stop_motor = string_to_bool[self.cache.get('motor_stop')]
-                if(GPIO.input(4) == 0 and GPIO.input(17) == 0 and stop_motor != True):
+
+                #commented out is for instance where stop switches are used
+                #if(GPIO.input(4) == 0 and GPIO.input(17) == 0 and stop_motor != True):
+                
+                if(stop_motor != True):               
                     print(GPIO.input(4))
                     GPIO.output(self.step_pin, True)
                     time.sleep(stepdelay)
