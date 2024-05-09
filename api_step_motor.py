@@ -55,12 +55,12 @@ def index():
         try:
             step_num = int(request.form['step_num'])         
         except:
-            step_num = 1000000000000
+            step_num = 280000
             
         try:
             step_delay = float(request.form['step_delay'])
         except:
-            step_delay = 0.0005
+            step_delay = 0.000000005
         
         #step_num = int(request.form['step_num'])
         #step_delay = float(request.form['step_delay'])
