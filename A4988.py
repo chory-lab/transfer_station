@@ -8,12 +8,12 @@ import redis
 
 GPIO.setmode(GPIO.BCM)
 
-#commented out for instance where switches are used and connectd to GPIO pins 4 and 17
-#switch_pin = 4 #microswitch pin
-#GPIO.setup(switch_pin, GPIO.IN) #set switch as input
+# Use commented out only in even microswitch are connected to GPIO pins 4 and 17
+# switch_pin = 4 #microswitch pin
+# GPIO.setup(switch_pin, GPIO.IN) #set switch as input
 
-#switch_pin_2 = 17
-#GPIO.setup(switch_pin_2, GPIO.IN)
+# switch_pin_2 = 17
+# GPIO.setup(switch_pin_2, GPIO.IN)
 
 string_to_bool = {'True':True, 'False': False, None: None}
 
@@ -43,7 +43,6 @@ class A4988Nema(object):
             self.mode_pins = False
 
         self.stop_motor = False
-        GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
 
     def motor_stop(self):
@@ -119,26 +118,24 @@ class A4988Nema(object):
             # dict resolution
             self.resolution_set(steptype)
             time.sleep(initdelay)
-
+            
             #not(string_to_bool[r.get('motor_stop')]) and 
             for i in range(steps):
                 stop_motor = string_to_bool[self.cache.get('motor_stop')]
 
-                #commented out is for instance where stop switches are used
+                #use commented out only in event switch is wired up to GPIO pins 4 and 17
                 #if(GPIO.input(4) == 0 and GPIO.input(17) == 0 and stop_motor != True):
                 
-                if(stop_motor != True):               
-                    print(GPIO.input(4))
+                if(stop_motor != True): 
                     GPIO.output(self.step_pin, True)
                     time.sleep(stepdelay)
                     GPIO.output(self.step_pin, False)
                     time.sleep(stepdelay)
                     if verbose:
-                        print("Steps count {}".format(i+1), end="\r", flush=True)
+                        print("Step count {}".format(i+1), end="\r", flush=True)
                 else:
                     self.cache.set('motor_stop', 'False')
                     raise StopMotorInterrupt
-            
 
         except KeyboardInterrupt:
             print("User Keyboard Interrupt : RpiMotorLib:")
