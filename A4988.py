@@ -1,3 +1,6 @@
+#Author: Benjamin Pyatski
+#Company: Chory Lab
+
 import sys
 import time
 import RPi.GPIO as GPIO
