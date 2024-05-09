@@ -78,4 +78,5 @@ This is what the stepper motor rail system is screwed onto connecting/supporting
 <h4>Assembly</h4>
 The final assembly consists of screwing the mount onto the incubator, then screwing the stepper motor rail system to the mount, screwing the tray platform onto the stepper motor rail system, and then finally attaching the tray onto the tray platform by sliding the two circular mounts on the tray platform into the holes on the tray.
 
-![image](https://github.com/chory-lab/transfer_station/assets/69654071/efbe3aa6-5773-4725-8d5d-f140b0767e20)
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/5c06eda0-1139-4632-b7d7-214fcca2a171)
+
