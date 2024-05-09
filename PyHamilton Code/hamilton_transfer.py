@@ -1,3 +1,7 @@
+#Author: Benjamin Pyatski
+#Company: Chory Lab
+#Purpose: Test basic movements of Hamilton Star through PyHamilton with integration of transfer_station system
+
 import os
 import sys
 import serial
@@ -20,6 +24,7 @@ wells_3 = [(plate_3, x) for x in range(8)]
 vols = [30 for x in range(8)]
 a = serial.Serial("COM5", 9600, timeout=1)
 
+#flask IP address
 url = 'http://10.146.92.218:5000'
 
 if __name__ == '__main__':
@@ -27,6 +32,8 @@ if __name__ == '__main__':
     with HamiltonInterface(simulate=True) as ham_int:
         normal_logging(ham_int, os.getcwd())
         initialize(ham_int)
+
+        #send request to transfer_station raspberry pi through flask IP address
         requests.post(url, data='go_right')
 
         
