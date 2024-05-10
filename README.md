@@ -81,9 +81,13 @@ This is what the stepper motor rail system is screwed onto connecting/supporting
 
 <h4>Assembly</h4>
 The final assembly consists of:
+
   1. Screw mount onto incubator with M6 x 12mm screws (x2)
+
   2. Screw stepper motor rail system to the mount with M3 x 12mm screws (x4)
+  
   3. Screw tray platform onto cart with M4 x 8mm screws (x4)
+  
   4. Slide tray onto pegs on tray platform
   
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/5c06eda0-1139-4632-b7d7-214fcca2a171)
