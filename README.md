@@ -90,7 +90,7 @@ The final assembly consists of:
   
   4. Slide tray onto pegs on tray platform
   
-![image](https://github.com/chory-lab/transfer_station/assets/69654071/9608b2dc-c5d0-4395-a03c-3b5592807c25)
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/2ea4342a-1d0f-4a60-ac54-e75c83075aa1)
 
 ![IMG_2489](https://github.com/chory-lab/transfer_station/assets/69654071/6cb466e3-b27b-4c4f-b220-d72cb4b66d85)
 
