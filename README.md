@@ -77,7 +77,7 @@ This comprises of a stepper motor, connected to a rail system (screw) that spins
 <h4>Mount</h4>
 This is what the stepper motor rail system is screwed onto connecting/supporting the stepper motor rail system on the incubator.
 
-![image](https://github.com/chory-lab/transfer_station/assets/69654071/741e2487-255b-4564-998c-046b475df2dc)
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/8c9b438e-2e05-4f78-83f6-389a6350ffdf)
 
 <h4>Assembly</h4>
 The final assembly consists of:
@@ -90,7 +90,7 @@ The final assembly consists of:
   
   4. Slide tray onto pegs on tray platform
   
-![image](https://github.com/chory-lab/transfer_station/assets/69654071/5c06eda0-1139-4632-b7d7-214fcca2a171)
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/9608b2dc-c5d0-4395-a03c-3b5592807c25)
 
 ![IMG_2489](https://github.com/chory-lab/transfer_station/assets/69654071/6cb466e3-b27b-4c4f-b220-d72cb4b66d85)
 
