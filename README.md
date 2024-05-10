@@ -80,8 +80,48 @@ This is what the stepper motor rail system is screwed onto connecting/supporting
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/741e2487-255b-4564-998c-046b475df2dc)
 
 <h4>Assembly</h4>
-The final assembly consists of screwing the mount onto the incubator, then screwing the stepper motor rail system to the mount, screwing the tray platform onto the stepper motor rail system, and then finally attaching the tray onto the tray platform by sliding the two circular mounts on the tray platform into the holes on the tray.
-
+The final assembly consists of:
+  1. Screw mount onto incubator with M6 x 12mm screws (x2)
+  2. Screw stepper motor rail system to the mount with M3 x 12mm screws (x4)
+  3. Screw tray platform onto cart with M4 x 8mm screws (x4)
+  4. Slide tray onto pegs on tray platform
+  
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/5c06eda0-1139-4632-b7d7-214fcca2a171)
 
 ![IMG_2489](https://github.com/chory-lab/transfer_station/assets/69654071/6cb466e3-b27b-4c4f-b220-d72cb4b66d85)
+
+<h2>Parts List</h2>
+1. 3D Printed Pieces
+
+  - Mount
+  
+  - Tray
+
+  - Tray Stand
+<br>
+2. Screws
+
+  - M6 x 12mm (x2) -> Used for screwing mount onto incubator
+    - https://www.amazon.com/PZRT-Hexagon-Socket-Countersunk-Stainless/dp/B08DF82569/ref=sr_1_11?crid=4DQCMXP4GQAZ&dib=eyJ2IjoiMSJ9.LIPtxz7Q5zTQQilsP_mo008b4pMHIWmHuQ720JEpOsFdaYlHN8LrANsgnHg5Ysbh8qXjYzT52biXEKR5GlfR4dHKsG4vxE6ysnHjFGUBHmuh0OJ7xeddjvSaguY1JImV6tWXzGDL5JyStOGngBdTygjJK5l7hoKika0_cMVsavOlynd-pgmOmzjRDgW6s3uKuT5VSKeSULYWakfDjJ3cjqC7uYYcQ4o9MtgXsStmpZs.zjiJT6gXKT8KD1W3KD2S6uGaLnkheQmfjYbNg_evdII&dib_tag=se&keywords=the%2Ba2-70%2Bbolt%2B12%2Bx%2B6&qid=1715367034&sprefix=the%2Ba2-70%2Bbolt%2B12%2Bx%2B6%2Caps%2C170&sr=8-11&th=1
+
+  - M4 x 8mm (x4) -> Used for screwing tray platform onto cart
+    - https://www.amazon.com/Socket-Screws-Metric-Machine-Threaded/dp/B0969NLFKW/ref=sr_1_1_sspa?crid=TY0NJ6U27D6W&dib=eyJ2IjoiMSJ9.T4FnBHNc5nvHguwvqZdhlpLj6FUAFWeK9QReCzsGAYReNHLWQJW3gWz3tb3vXL-PByVFq5leU247cdXgW0cMeR7oUdt4h6C_Q7hS07qnFzIKxTFAnqt2mdousxt5Emva7nfX_mJPuE2hD5gmTV4v54tMjhizl34UzSpMEJibxKJYMhQ_ctJN59qOoG0c7RVIrKbcjQN3Q6iudCKvmz2UBnebbf5Lt_9ERBOqS7v6T9ToHmRlLnLx2cLLlSHj9LdcNAz4bMfmypGhMsYnvrtF7ZzVfuzjhxr5B_vm6Bl1IU8.AnoHgxmFQR-HwbuRKF5YqoVtBtESvCxRAs0hURdmjSI&dib_tag=se&keywords=m4%2Bx%2B9&qid=1715367254&s=hi&sprefix=m4%2Bx%2B9%2Ctools%2C157&sr=1-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1
+
+  - M3 x 12mm (x4) -> Used for screwing rail onto mount
+    - https://www.amazon.com/SUNXULIMI-Socket-Furniture-Stainless-Threaded/dp/B0CMDVK2QK/ref=sr_1_1_sspa?crid=2EAFIZ14FR2N4&dib=eyJ2IjoiMSJ9.XBVxtXZCu16yzamFewEx3RD8Fu6XA2mLkz6qRg9iTw4bFX7WU9gJaB-ImrHu-00KMMVldpca7Ehg9MrnYFHOh-Q7du1eSdqTb4vhw68zIUsUITIWnWm5H2G-ag4Dfg648XON4MdT-gaPyy2MyUbmduYc76nFvK3sn5n1fOeGxi0CLilI1Vht1R3iOFZ4ffNv7QGI6qWl2HMIVCt2gnNh93e1MpFXQwnXBS8jUMpQ06zO16jHf4qrptF8cIK9WpqijAsietMqs6HERn5OrdOTNw6gd5Vn5t1wfg3dPQYeX_w.zgVGKykv2EG8onQbxvmg3IDkZq2iORxMtXPFSrs-ifQ&dib_tag=se&keywords=m3%2Bx%2B12&qid=1715367419&s=hi&sprefix=m3%2Bx%2B1%2Ctools%2C107&sr=1-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1
+<br>
+
+3. A4988 Stepper Motor Drive -> Needs seperate power cable
+  - https://www.amazon.com/WWZMDiB-Stepstick-Stepper-Printer-Suitable/dp/B0BFQZWT6R/ref=sr_1_2_sspa?crid=BXMA21BJZFUR&dib=eyJ2IjoiMSJ9.-DERZWswWeLIrDX-CE6W2eUaDTj3Hse7vymBmv-5DaU86ahz6vvxX2T_9RnZS9wpUMFaTXt0kM5b501wAbyo8JcrPEHZvG0vIGuSA4m96sDXJ9XmNpnMZWsy1tRva1fV17v5v1jBhDDgbgP951V04iH0_PsoX44f46Kyej_z92YO8vj3G8RaJT2jcvNgjojsWUoNw98jcZ2swwNRqJ92M_6hMuKSVHy4HpC_Dl7E_A8.WpNk_oUq1mXg1puht4JrrBkYhmKFKayyfXhNf7olYDQ&dib_tag=se&keywords=A4988%2Bdriver&qid=1715367645&sprefix=a4988%2Bdrive%2Caps%2C135&sr=8-2-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1
+<br>
+
+4. Raspberry Pi Zero 2 W -> Needs seperate power cable, and male header pins to solder on
+  - https://www.amazon.com/Raspberry-Quad-core-Bluetooth-onboard-Antenna/dp/B0CCRP85TR/ref=sr_1_1_sspa?crid=31CITI545J2LE&dib=eyJ2IjoiMSJ9._aa2DALNqDdQhYnlXw1mxoDktKjOgpHnHu2JjT_rcWxWrDRzbTeOdGo7RMfSkGMRV-Mziw-gU9HVWVdf840aZ_JY80VJra3m0X_9WvtE6l4EeLJrgzQfQd28BpVD3j8nplJ5LlRrtqo6lc-J1-XaARy-3XHt8GxJLpus3bxjsS-XPJuZQlttR8EYRT8pQYkCF0LVFD6CZh3EpAL0PV__bj2LyocsYkhMI5ls4F022zg.Zu7DdM9AfSvLf8MKw5uIWmHoi4gyth1FtPzrpLbAvFI&dib_tag=se&keywords=raspberry+pi+zero+2+w&qid=1715367706&sprefix=raspberry+pi+zero+2+w%2Caps%2C104&sr=8-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1
+
+5. Stepper Motor Rail System
+  -  https://www.amazon.com/FUYU-Linear-Module-Actuator-Stepper/dp/B0CG5PPKXY/ref=sr_1_2_sspa?crid=CIFUWO83AQSG&dib=eyJ2IjoiMSJ9.Tl5dPAzpScab3jUGWYx4yYB9-kuIAvTp1HGtkAMGeZ2ddMavjIlrmjbEtA2pRskiQwosZ6ahYWtzqZcv-Ag4vCL0JGMtHCXwt4nBiTo67LBgzMT4GrErAs5Pf_5CSRmwXwvWSfRLr__Jyq0Spl-g8Xu-5kN5tV7P0o_17FRxlqP4salzZkJLHYD9VSsO1rNCoCSIZAQ5w-CibIcj7wTn7j3oA3aMLOKu_u9qA5i-C6A.C-5n9PkGCahuyOtgaikKZ6Aen9ltO_3ofrZL0GMneqA&dib_tag=se&keywords=stepper%2Bmotor%2Brail&qid=1715367746&sprefix=stepper%2Bmotor%2Brail%2Caps%2C106&sr=8-2-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1
+
+6. Powered USB hub with mini USB connector -> Used for connecting keyboard and mouse to raspbery pi zero 2 w
+  - https://www.amazon.com/AuviPal-Adapter-Playstation-Classic-Raspberry/dp/B083WML1XB/ref=sr_1_6?crid=3CMJ55CPE0AMD&dib=eyJ2IjoiMSJ9.oEfjxkOlNOTQqeG3O-c5YhvGvwPDpvkwObvKTvKU6duvTYrgnNnvzAYpNRAvd6PM9BR5CxAUCkRURNKSZ82bw8SkySiVbqVgP21E772eLnKlvtkJGpVSs2lUarFtGxLHpBor_3toBI68q4eteT7Hb6LYkGb-QCfWfcuZd9XL019m43o12YvIm_lcRHlEYFwryZ0f4FWtkpTJA4bRvKqGeIEDs2z-evmi1WLvGrPD4do.6EBM29lrqhramCMlycLT825Qe4_ephRpIP21n6FjR7w&dib_tag=se&keywords=powered+usb+hub+mini+usb&qid=1715368304&sprefix=powered+usb+hub+mini+usb%2Caps%2C100&sr=8-6
+
+
