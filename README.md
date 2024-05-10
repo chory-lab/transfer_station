@@ -56,6 +56,36 @@ The transfer station consists of a step motor rail connected through a motor dri
 
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/a2e29e91-b305-4fbc-8b5c-8c84075bc933)
 
+<h4>A4988 Stepper Motor Driver</h4>
+
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/13c0050c-7d20-4bd9-b880-a7aa17810c33)
+
+Pin Index:
+  - ENA -> Enable pin. When low A4988 is enabled, when high A4988 is disabled
+  - RES -> Reset pin
+  - SLP -> Sleep pin (connected to RES so SLP triggers code RES)
+  - STP -> Step. Reads how many steps requested for the step motor to take
+  - DIR -> Direction.
+  - VMT -> Energy supply to power step motor
+  - GND -> Ground
+  - 2B, 2A, 1A, 1B -> Control for Bipolar Step Motor (Power, Step, Direction)
+  - VDD -> Power for A4988
+
+<h4>Raspberry Pi Zero 2 W</h4>
+
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/397a1f29-71f6-4400-840c-6d2acba378ad)
+
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/97159fb8-87ad-45c7-b7d0-eb24ef14be5d)
+
+Pin Index:
+  - 2 -> 5V Power to supply A4988
+  - 6 -> Ground
+  - 15 -> GPIO22, programmable pin
+  - 16 -> GPIO23, programmable pin
+  - 18 -> GPIO24, programmable pin
+
+Any GPIO can be used as they are all programmable
+
 <h3>Transfer Station System</h3>
 The system is composed of 4 core components, these consist of the tray, tray platform, step motor rail system, and the mount. All components were printed with PLA plastic, and default 3D printer settings. Screws used were the default ones that come with the Hamilton Star, and the default bolts that came with the incubator mount. 
 
