@@ -16,7 +16,7 @@ In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary 
 
 <h3>FLow Chart</h3>
 
-[Uploading Untitled Diagram.drawio…](<mxfile host="app.diagrams.net" modified="2024-05-13T13:58:28.014Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" etag="xTfizO0w__bfXnVT8eeU" version="24.3.1" type="device">
+[Uploading Untitled Diagram.drawio…]()<mxfile host="app.diagrams.net" modified="2024-05-13T13:58:28.014Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" etag="xTfizO0w__bfXnVT8eeU" version="24.3.1" type="device">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
     <mxGraphModel dx="954" dy="515" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -83,7 +83,8 @@ In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary 
     </mxGraphModel>
   </diagram>
 </mxfile>
-)
+
+
 
 <h3>Installation</h3>
 
