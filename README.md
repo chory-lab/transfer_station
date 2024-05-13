@@ -16,75 +16,7 @@ In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary 
 
 <h3>FLow Chart</h3>
 
-[Uploading Untitled Diagram.drawio…]()<mxfile host="app.diagrams.net" modified="2024-05-13T13:58:28.014Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" etag="xTfizO0w__bfXnVT8eeU" version="24.3.1" type="device">
-  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-    <mxGraphModel dx="954" dy="515" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
-      <root>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-2" value="Client" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="490" y="40" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-4" value="Raspberry Pi Zero 2 W" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="220" y="40" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-5" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="CfdNrmV3Dvz8RvVJGAbx-6" target="CfdNrmV3Dvz8RvVJGAbx-4">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="390" y="280" as="sourcePoint" />
-            <mxPoint x="440" y="230" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-7" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="490" y="70" as="sourcePoint" />
-            <mxPoint x="460" y="70" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-6" value="Flask API&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Redis-Server&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="370" y="55" width="90" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-8" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="CfdNrmV3Dvz8RvVJGAbx-9">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="260" y="160" as="sourcePoint" />
-            <mxPoint x="280" y="200" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-10" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="CfdNrmV3Dvz8RvVJGAbx-4" target="CfdNrmV3Dvz8RvVJGAbx-9">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="280" y="100" as="sourcePoint" />
-            <mxPoint x="280" y="240" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-9" value="api_step_motor.py" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="250" y="130" width="60" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-13" value="A4988.py" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="250" y="200" width="60" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-17" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="CfdNrmV3Dvz8RvVJGAbx-13">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="390" y="180" as="sourcePoint" />
-            <mxPoint x="280" y="270" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-18" value="A4988 Stepper Motor Driver" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="220" y="270" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-19" value="Stepper Motor Rail System" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="220" y="370" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="CfdNrmV3Dvz8RvVJGAbx-20" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="CfdNrmV3Dvz8RvVJGAbx-18" target="CfdNrmV3Dvz8RvVJGAbx-19">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="390" y="260" as="sourcePoint" />
-            <mxPoint x="440" y="210" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-</mxfile>
-
-
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/d1da2de6-53cc-47c6-a860-9d3476c1888c)
 
 <h3>Installation</h3>
 
