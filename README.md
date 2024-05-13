@@ -14,6 +14,10 @@ The system is setup in such a way where the majority of the fucntional code is i
 <h3>A4988.py</h3>
 In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary to utilize a A4988 controller, and the python file of the same name holds all the function definitions utilized in api_step_motor.py and the microswitches, and handles the connection between the Raspberry Pi 4 and the stepper motor on the rail.
 
+<h3>FLow Chart</h3>
+
+
+
 <h3>Installation</h3>
 
 * Install flask (make sure it is ver 2.2.2 or newer otherwise --app feature won't work, check this by running flask --version):
