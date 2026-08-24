@@ -87,6 +87,12 @@ PYCHECK
 
     chown -R "${PI_USER}:${PI_USER}" "$REPO_DEST"
 
+    # sdm has no --timezone switch; set it here where it is unambiguous.
+    if [ -n "${TIMEZONE:-}" ] && [ -e "/usr/share/zoneinfo/${TIMEZONE}" ]; then
+        ln -sf "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
+        echo "${TIMEZONE}" > /etc/timezone
+    fi
+
     systemctl enable "${APP_NAME}.service"
     systemctl enable ssh
 
