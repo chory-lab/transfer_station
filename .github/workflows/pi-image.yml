@@ -46,6 +46,12 @@ jobs:
           esac
           test -n "$APP_NAME" && test -n "$PI_USER" && test -n "$ETH_ADDRESS"
 
+      # shellcheck cannot see that a path resolves to nothing. Phase 0 runs
+      # on the host, so it can be run here for real against a fake image --
+      # about a second, against a three-minute image build.
+      - name: cscript phase 0 stages the image correctly
+        run: bash pi-image/tests/test_cscript_phase0.sh
+
       - name: the rendered unit is valid
         run: |
           . pi-image/pi-app.env

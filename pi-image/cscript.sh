@@ -18,15 +18,18 @@ set -euo pipefail
 
 phase="${1:-}"
 
-# build.sh writes this alongside the script so both phases can read the
-# manifest; sdm does not forward arbitrary environment into nspawn.
-CONF_HOST="$(dirname "${BASH_SOURCE[0]}")/pi-app.env"
+# sdm copies this script INTO the image and runs it from there, so the
+# manifest is not sitting beside it at run time. Phase 0 runs on the host,
+# where build.sh's exports are visible, so it takes the staging directory
+# from the environment; phase 1 reads the copy phase 0 planted in the image.
 CONF_IMG=/etc/pi-image-app.env
 
 case "$phase" in
 
 0)
     echo "cscript phase 0: staging files into the image"
+    : "${PI_IMAGE_BUILD:?phase 0 needs PI_IMAGE_BUILD, exported by build.sh}"
+    CONF_HOST="$PI_IMAGE_BUILD/pi-app.env"
     # shellcheck disable=SC1090
     . "$CONF_HOST"
 
@@ -48,12 +51,6 @@ case "$phase" in
 
     install -m 644 "$PI_IMAGE_BUILD/${APP_NAME}.service" \
         "$SDMPT/etc/systemd/system/${APP_NAME}.service"
-
-    if [ -n "${PI_SSH_PUBKEY:-}" ]; then
-        install -d -m 700 "$SDMPT/home/${PI_USER}/.ssh"
-        printf '%s\n' "$PI_SSH_PUBKEY" > "$SDMPT/home/${PI_USER}/.ssh/authorized_keys"
-        chmod 600 "$SDMPT/home/${PI_USER}/.ssh/authorized_keys"
-    fi
     ;;
 
 1)
@@ -85,7 +82,18 @@ assert u.find_spec("RPi.GPIO"), "RPi.GPIO is not visible in the venv"
 print("deps ok")
 PYCHECK
 
-    chown -R "${PI_USER}:${PI_USER}" "$REPO_DEST"
+    # The repo landed in phase 0, before sdm's user plugin created the
+    # account, so nothing under the home directory is owned by anyone yet.
+    chown -R "${PI_USER}:${PI_USER}" "/home/${PI_USER}"
+
+    # Authorized keys have to wait for the account to exist, which is why
+    # this is here and not in phase 0 beside the other file staging.
+    if [ -n "${PI_SSH_PUBKEY:-}" ]; then
+        install -d -m 700 -o "$PI_USER" -g "$PI_USER" "/home/${PI_USER}/.ssh"
+        printf '%s\n' "$PI_SSH_PUBKEY" > "/home/${PI_USER}/.ssh/authorized_keys"
+        chown "${PI_USER}:${PI_USER}" "/home/${PI_USER}/.ssh/authorized_keys"
+        chmod 600 "/home/${PI_USER}/.ssh/authorized_keys"
+    fi
 
     # sdm has no --timezone switch; set it here where it is unambiguous.
     if [ -n "${TIMEZONE:-}" ] && [ -e "/usr/share/zoneinfo/${TIMEZONE}" ]; then
