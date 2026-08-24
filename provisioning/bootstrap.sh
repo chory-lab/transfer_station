@@ -80,8 +80,12 @@ fi
 # legitimately contain |, & or backslashes.
 CFG="$SRC/provisioning/config.env"
 grep -v '^PI_PASSWORD=' "$CFG" > "$CFG.new"
-printf 'PI_PASSWORD=%s
-' "$PW" >> "$CFG.new"
+# Store it base64-encoded: config.env is sourced by bash AND parsed by
+# PowerShell, so any quoting scheme that survives one can break the other.
+# Base64 is safe for both, and the consumers know to decode it.
+printf 'PI_PASSWORD_B64=%s
+' "$(printf '%s' "$PW" | base64 | tr -d '
+')" >> "$CFG.new"
 mv "$CFG.new" "$CFG"
 echo
 echo ">> writing the image and provisioning (a few minutes)"

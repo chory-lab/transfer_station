@@ -27,6 +27,12 @@ done
 # shellcheck disable=SC1091
 . "$HERE/config.env"
 
+# bootstrap writes the password base64-encoded so it is safe for both bash and
+# PowerShell to carry; decode it back if present.
+if [ -n "${PI_PASSWORD_B64:-}" ]; then
+    PI_PASSWORD="$(printf '%s' "$PI_PASSWORD_B64" | base64 -d)"
+fi
+
 # --- write the image ------------------------------------------------------
 if [ -n "$DEVICE" ]; then
     [ -n "$IMAGE" ] || { echo "--device requires --image" >&2; exit 2; }

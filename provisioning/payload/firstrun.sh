@@ -25,6 +25,12 @@ echo "=== firstrun stage A $(date -u) ==="
 # shellcheck disable=SC1091
 . "$PAYLOAD/config.env"
 
+# bootstrap writes the password base64-encoded so it is safe for both bash and
+# PowerShell to carry; decode it back if present.
+if [ -n "${PI_PASSWORD_B64:-}" ]; then
+    PI_PASSWORD="$(printf '%s' "$PI_PASSWORD_B64" | base64 -d)"
+fi
+
 # --- account -------------------------------------------------------------
 if ! id -u "$PI_USER" >/dev/null 2>&1; then
     # Bookworm images ship with no user at all; create ours from scratch.

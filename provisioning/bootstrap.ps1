@@ -68,7 +68,9 @@ try {
     # Rewrite the line rather than regex-replacing into it: $ and \ in a
     # password would otherwise be interpreted as replacement metacharacters.
     $kept = Get-Content $cfg | Where-Object { $_ -notmatch '^PI_PASSWORD=' }
-    ($kept + "PI_PASSWORD=$p1") | Set-Content $cfg -Encoding utf8
+    # Base64 so the value is safe for both bash's `source` and our own parser.
+    $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($p1))
+    ($kept + "PI_PASSWORD_B64=$b64") | Set-Content $cfg -Encoding utf8
 
     Write-Host '>> provisioning the card'
     & (Join-Path $src.FullName 'provisioning\flash.ps1') -BootDrive $boot

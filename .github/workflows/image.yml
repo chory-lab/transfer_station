@@ -33,6 +33,9 @@ jobs:
           # complains that User=chorylab and the ExecStart path do not exist.
           ! grep -qiE 'invalid|failed to parse|unknown lvalue' /tmp/verify.log
 
+      - name: bootstrap + README URL consistency
+        run: bash provisioning/tests/test_bootstrap.sh
+
       - name: config.env is parseable by both shells
         run: |
           bash -c '. provisioning/config.env; echo "$ETH_ADDRESS:$SERVER_PORT"'
@@ -64,6 +67,10 @@ jobs:
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile(
             (Resolve-Path ./provisioning/flash.ps1), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.ToString() }; exit 1 }
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./provisioning/bootstrap.ps1), [ref]$null, [ref]$errors) | Out-Null
           if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.ToString() }; exit 1 }
 
       - name: flash.ps1 behaviour + parity with flash.sh

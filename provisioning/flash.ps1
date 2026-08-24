@@ -40,6 +40,13 @@ Get-Content (Join-Path $Here 'config.env') | ForEach-Object {
     }
 }
 
+# A password written by bootstrap.ps1 is base64-encoded so it survives being
+# sourced by bash on the Pi; decode it back for our own use.
+if ($cfg['PI_PASSWORD_B64']) {
+    $cfg['PI_PASSWORD'] = [Text.Encoding]::UTF8.GetString(
+        [Convert]::FromBase64String($cfg['PI_PASSWORD_B64']))
+}
+
 # --- optional flash via Raspberry Pi Imager CLI ---------------------------
 if ($Image) {
     if (-not $Device) { throw "-Image requires -Device (the Imager device index or path)" }
