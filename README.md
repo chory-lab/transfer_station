@@ -5,19 +5,6 @@
 <h1>Introduction</h1>
 This repository holds the code (and previously used test code) for the functioning of the transfer system, or just the step motor rail. There are two parts to this README detailing the software components, and the hardware components of the transfer station system.
 
-<h2>Software</h2>
-This section details the usage of the code.
-
-<h3>api_step_motor.py</h3>
-The system is setup in such a way where the majority of the fucntional code is in api_step_motor, which creates a UI through flask (and handles subsequent interactions with said UI) that the user can input commands to. 
-
-<h3>A4988.py</h3>
-In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary to utilize a A4988 controller, and the python file of the same name holds all the function definitions utilized in api_step_motor.py and the microswitches, and handles the connection between the Raspberry Pi 4 and the stepper motor on the rail.
-
-<h3>FLow Chart</h3>
-
-![image](https://github.com/chory-lab/transfer_station/assets/69654071/d1da2de6-53cc-47c6-a860-9d3476c1888c)
-
 <h2>SD Card Setup (Automated)</h2>
 
 The <code>provisioning/</code> directory builds a ready-to-run SD card: this
@@ -46,6 +33,11 @@ must stay <code>chorylab</code> unless you also change that path.
 </blockquote>
 
 <h3>2. Flash the card</h3>
+
+Use <b>Raspberry Pi OS Lite (64-bit)</b>. Both current Debian bases are
+supported &mdash; Bookworm (Debian 12) and Trixie (Debian 13) &mdash; and the
+flasher detects which one it is looking at. Taking whatever Raspberry Pi
+Imager offers as the current release is fine.
 
 <b>Windows.</b> Flash stock Raspberry Pi OS Lite (64-bit) with Raspberry Pi
 Imager first &mdash; no customisation needed, the script supplies all of it.
@@ -114,6 +106,19 @@ lists a Raspberry Pi Zero 2 W, which is Wi-Fi only and has no ethernet jack &mda
 that entry is stale and should be reconciled. A Pi 5 would also need
 <code>rpi-lgpio</code> in place of <code>python3-rpi.gpio</code>.
 </blockquote>
+
+<h2>Software</h2>
+This section details the usage of the code.
+
+<h3>api_step_motor.py</h3>
+The system is setup in such a way where the majority of the fucntional code is in api_step_motor, which creates a UI through flask (and handles subsequent interactions with said UI) that the user can input commands to. 
+
+<h3>A4988.py</h3>
+In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary to utilize a A4988 controller, and the python file of the same name holds all the function definitions utilized in api_step_motor.py and the microswitches, and handles the connection between the Raspberry Pi 4 and the stepper motor on the rail.
+
+<h3>FLow Chart</h3>
+
+![image](https://github.com/chory-lab/transfer_station/assets/69654071/d1da2de6-53cc-47c6-a860-9d3476c1888c)
 
 <h2>Manual Setup (alternative to flashing)</h2>
 
