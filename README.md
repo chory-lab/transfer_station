@@ -18,6 +18,104 @@ In order for the stepper motor to connect to the Raspberry Pi 4 it is necessary 
 
 ![image](https://github.com/chory-lab/transfer_station/assets/69654071/d1da2de6-53cc-47c6-a860-9d3476c1888c)
 
+<h2>SD Card Setup (Automated)</h2>
+
+The <code>provisioning/</code> directory builds a ready-to-run SD card: this
+repo installed, the Flask server started automatically at boot, and the
+ethernet port pinned to a static address on an isolated network segment that
+is not reachable from the lab LAN.
+
+This replaces the manual Installation and Setup steps below. See
+<a href="provisioning/README.md">provisioning/README.md</a> for full detail.
+
+<h3>1. Edit the configuration</h3>
+
+Open <code>provisioning/config.env</code> and set at minimum
+<code>PI_PASSWORD</code>. The defaults give you:
+
+| Setting | Default |
+|---|---|
+| UI | <code>http://192.168.10.1:5000</code> |
+| SSH | <code>ssh chorylab@192.168.10.1</code> |
+| Hostname | <code>transfer-station</code> |
+
+<blockquote>
+<code>api_step_motor.py</code> hardcodes
+<code>/home/chorylab/transfer_station/templates</code>, so <code>PI_USER</code>
+must stay <code>chorylab</code> unless you also change that path.
+</blockquote>
+
+<h3>2. Flash the card</h3>
+
+<b>Windows.</b> Flash stock Raspberry Pi OS Lite (64-bit) with Raspberry Pi
+Imager first &mdash; no customisation needed, the script supplies all of it.
+Then, with the card still inserted:
+
+```powershell
+.\provisioninglash.ps1 -BootDrive E:
+```
+
+<code>E:</code> is the small FAT partition Windows mounts after imaging (the
+one containing <code>config.txt</code> and <code>cmdline.txt</code>).
+
+<b>Linux / macOS.</b> Flash and provision in one step:
+
+```bash
+sudo ./provisioning/flash.sh --image raspios-lite-arm64.img.xz --device /dev/sdX
+```
+
+Or provision a card you already flashed:
+
+```bash
+./provisioning/flash.sh --boot /media/$USER/bootfs
+```
+
+<h3>3. First boot &mdash; connect to the internet once</h3>
+
+The card boots in three phases:
+
+1. <b>Stage A</b> (offline) &mdash; creates the user, sets the hostname,
+   enables SSH, unpacks the repo, arms stage B. Reboots.
+2. <b>Stage B</b> (<b>needs internet</b>) &mdash; installs redis and the Python
+   dependencies with <code>uv</code>, installs the systemd service, then
+   applies the isolated static network config. Reboots.
+3. <b>Normal operation</b> &mdash; static IP, server running.
+
+So <b>plug the Pi into a normal router with internet for the first boot</b>.
+It takes a few minutes. Once it reboots into phase 3 you can move it to the
+isolated switch permanently.
+
+<h3>4. Configure the controller PC</h3>
+
+Give the NIC facing the switch a static address on the same subnet, with
+<b>no gateway</b>:
+
+```
+address  192.168.10.2
+netmask  255.255.255.0
+gateway  <blank>
+```
+
+Leave the normal Wi-Fi/LAN adapter alone &mdash; it keeps the default route,
+so the PC keeps internet access while talking to the Pi over the switch.
+
+<h3>Managing the service</h3>
+
+```bash
+sudo systemctl status transfer-station     # is it running?
+sudo systemctl restart transfer-station    # restart after a code change
+journalctl -u transfer-station -f          # live logs
+```
+
+<blockquote>
+<b>Ethernet requires a Pi with an ethernet port.</b> The Raspberry Pi Zero 2 W
+in the parts list below has none &mdash; it is Wi-Fi only. Use a Pi 4 (or any
+model with an RJ45 jack), or add a USB ethernet adapter, otherwise there is no
+<code>eth0</code> for the static address to bind to.
+</blockquote>
+
+<h2>Manual Setup (alternative to flashing)</h2>
+
 <h3>Installation</h3>
 
 * Install flask (make sure it is ver 2.2.2 or newer otherwise --app feature won't work, check this by running flask --version):
