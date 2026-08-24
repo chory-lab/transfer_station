@@ -114,8 +114,9 @@ RestartSec=5
 WantedBy=multi-user.target
 UNIT
 
-# The phase script reads the manifest from beside itself, with the password
-# resolved from the environment rather than the committed file.
+# The phase script reads the manifest from PI_IMAGE_BUILD, exported below;
+# sdm copies the script into the image, so it cannot find it any other way.
+# The password comes from the environment rather than the committed file.
 grep -v '^PI_PASSWORD=' "$HERE/pi-app.env" > "$BUILD/pi-app.env"
 printf 'PI_PASSWORD=%s\n' "$PI_PASSWORD" >> "$BUILD/pi-app.env"
 install -m 755 "$HERE/cscript.sh" "$BUILD/cscript.sh"
@@ -129,7 +130,7 @@ sdm --customize "$WORK" \
     --hostname "$PI_HOSTNAME" \
     --extend --xmb "$GROW_MB" \
     --expand-root \
-    --plugin "user:username=${PI_USER}|password=${PI_PASSWORD}|groups=sudo,adm,dialout,gpio,i2c,spi,video,plugdev,netdev" \
+    --plugin "user:adduser=${PI_USER}|password=${PI_PASSWORD}|groups=sudo,adm,dialout,gpio,i2c,spi,video,plugdev,netdev" \
     --plugin "apps:apps=${APT_PACKAGES}" \
     --cscript "$BUILD/cscript.sh"
 
