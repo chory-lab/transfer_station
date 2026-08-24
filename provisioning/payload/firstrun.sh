@@ -31,6 +31,21 @@ if [ -n "${PI_PASSWORD_B64:-}" ]; then
     PI_PASSWORD="$(printf '%s' "$PI_PASSWORD_B64" | base64 -d)"
 fi
 
+# --- clock ----------------------------------------------------------------
+# Do this first: everything downstream (apt's Release validity, TLS, and the
+# timestamps in this very log) depends on the clock being sane. A Pi has no
+# RTC, so with no network it starts from whatever it last saved.
+if [ -f "$PAYLOAD/buildstamp" ]; then
+    BUILT_AT="$(cat "$PAYLOAD/buildstamp")"
+    NOW="$(date -u +%s)"
+    if [ "$NOW" -lt "$BUILT_AT" ] 2>/dev/null; then
+        echo "clock reads $(date -u) which precedes the card build; advancing it"
+        date -u -s "@${BUILT_AT}" || true
+        command -v fake-hwclock >/dev/null 2>&1 && fake-hwclock save || true
+        echo "clock now $(date -u)"
+    fi
+fi
+
 # --- account -------------------------------------------------------------
 if ! id -u "$PI_USER" >/dev/null 2>&1; then
     # Bookworm images ship with no user at all; create ours from scratch.
@@ -64,7 +79,10 @@ systemctl enable ssh
 
 # --- repository ----------------------------------------------------------
 install -d -o "$PI_USER" -g "$PI_USER" "$REPO_DEST"
-tar -xzf "$PAYLOAD/repo.tar.gz" -C "$REPO_DEST"
+# -m: do not restore mtimes. If the clock is still behind the build time
+# for any reason, tar otherwise emits a "timestamp in the future" warning
+# for every single file and buries the real output.
+tar -xzmf "$PAYLOAD/repo.tar.gz" -C "$REPO_DEST"
 chown -R "${PI_USER}:${PI_USER}" "$REPO_DEST"
 
 # --- arm stage B ---------------------------------------------------------

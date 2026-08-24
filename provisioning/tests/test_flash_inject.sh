@@ -100,6 +100,14 @@ for f in firstrun.sh provision.sh config.env; do
     if has_cr "$BOOT/transfer-station/$f"; then fail "found CR in $f"; else pass; fi
 done
 
+it "writes a build timestamp for the clock fix"
+assert_file "$BOOT/transfer-station/buildstamp"
+
+it "buildstamp is a plausible unix epoch"
+STAMP="$(cat "$BOOT/transfer-station/buildstamp" 2>/dev/null | tr -d '[:space:]')"
+if [ -n "$STAMP" ] && [ "$STAMP" -gt 1700000000 ] 2>/dev/null; then pass
+else fail "buildstamp is [$STAMP]"; fi
+
 it "no leftover temp tarball on the boot partition"
 assert_no_file "$BOOT/.repo.tar.gz.tmp"
 

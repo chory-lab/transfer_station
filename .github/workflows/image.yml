@@ -38,6 +38,9 @@ jobs:
       - name: bootstrap + README URL consistency
         run: bash provisioning/tests/test_bootstrap.sh
 
+      - name: no stray control characters in tracked files
+        run: bash provisioning/tests/test_no_control_chars.sh
+
       - name: config.env is parseable by both shells
         run: |
           bash -c '. provisioning/config.env; echo "$ETH_ADDRESS:$SERVER_PORT"'

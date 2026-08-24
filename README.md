@@ -26,7 +26,7 @@ the right one explicitly (note this form downloads the script first, as
 
 ```powershell
 irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 -OutFile bootstrap.ps1
-.ootstrap.ps1 -BootDrive E:
+.\bootstrap.ps1 -BootDrive E:
 ```
 
 The card can be blank &mdash; the script writes Raspberry Pi OS Lite (64-bit)

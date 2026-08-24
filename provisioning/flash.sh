@@ -115,6 +115,13 @@ if [ -n "${TS_BUNDLE:-}" ] && [ -d "$TS_BUNDLE" ]; then
     sudo cp -r "$TS_BUNDLE" "$PAYLOAD/bundle"
 fi
 
+# --- build timestamp ------------------------------------------------------
+# A Pi has no RTC. With no network it boots believing whatever time it last
+# saved, often weeks in the past -- which makes apt reject repositories as
+# "not valid yet" and can break TLS. Record when this card was built so stage
+# A can advance the clock to at least that point.
+date -u +%s | sudo tee "$PAYLOAD/buildstamp" >/dev/null
+
 # --- arm the first-boot hook ---------------------------------------------
 # Bookworm+ mounts the FAT partition at /boot/firmware; earlier at /boot.
 # pi-gen's real issue.txt names no codename -- it is only

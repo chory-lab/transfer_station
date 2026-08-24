@@ -24,7 +24,7 @@ pass() { _green "  ok:   ${CURRENT_TEST}"; }
 # Visible non-failure, for checks that cannot run in this environment.
 skip() {
     TESTS_RUN=$((TESTS_RUN - 1))
-    printf '[33m  SKIP: %s[0m
+    printf '\033[33m  SKIP: %s\033[0m
 ' "${CURRENT_TEST}${1:+ -- $1}"
 }
 

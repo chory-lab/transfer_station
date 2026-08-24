@@ -177,6 +177,14 @@ foreach ($f in @('firstrun.sh', 'provision.sh', 'transfer-station.service')) {
 $cfgText = [IO.File]::ReadAllText((Join-Path $Here 'config.env')) -replace "`r`n", "`n"
 [IO.File]::WriteAllText((Join-Path $payload 'config.env'), $cfgText, $utf8NoBom)
 
+# --- build timestamp ------------------------------------------------------
+# A Pi has no RTC. With no network it boots believing whatever time it last
+# saved, often weeks in the past, which makes apt reject repositories as
+# "not valid yet" and can break TLS. Record when this card was built so
+# stage A can advance the clock to at least that point.
+$epoch = [int][double]::Parse((Get-Date -UFormat %s))
+[IO.File]::WriteAllText((Join-Path $payload "buildstamp"), "$epoch`n", $utf8NoBom)
+
 # --- offline bundle -------------------------------------------------------
 if ($Bundle) {
     if (-not (Test-Path -LiteralPath $Bundle)) { throw "Bundle not found: $Bundle" }
