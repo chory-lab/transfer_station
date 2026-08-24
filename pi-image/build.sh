@@ -127,10 +127,8 @@ export PI_IMAGE_BUILD="$BUILD"
 
 sdm --customize "$WORK" \
     --hostname "$PI_HOSTNAME" \
-    --timezone "$TIMEZONE" \
     --extend --xmb "$GROW_MB" \
     --expand-root \
-    --restart \
     --plugin "user:username=${PI_USER}|password=${PI_PASSWORD}|groups=sudo,adm,dialout,gpio,i2c,spi,video,plugdev,netdev" \
     --plugin "apps:apps=${APT_PACKAGES}" \
     --cscript "$BUILD/cscript.sh"
