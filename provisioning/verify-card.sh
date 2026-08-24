@@ -54,10 +54,20 @@ echo
 
 if [ "$PHASE" = "preboot" ]; then
     echo "Boot hook"
+    # Same rule as flash.sh: pi-gen's issue.txt names no codename, only a
+    # build date, so matching codenames alone sends every current image down
+    # the pre-bookworm branch and this check fails on a perfectly good card.
     RELEASE="$(cat "$BOOT/issue.txt" 2>/dev/null || true)"
+    BUILT="$(printf '%s' "$RELEASE" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 | tr -d '-' || true)"
     case "$RELEASE" in
-        *bookworm*|*trixie*|*forky*) EXPECT=/boot/firmware/transfer-station/firstrun.sh ;;
-        *)                           EXPECT=/boot/transfer-station/firstrun.sh ;;
+        *bookworm*|*trixie*|*forky*)
+            EXPECT=/boot/firmware/transfer-station/firstrun.sh ;;
+        *)
+            if [ -n "$BUILT" ] && [ "$BUILT" -ge 20231010 ]; then
+                EXPECT=/boot/firmware/transfer-station/firstrun.sh
+            else
+                EXPECT=/boot/transfer-station/firstrun.sh
+            fi ;;
     esac
     case "$CMDLINE" in *"systemd.run=$EXPECT"*) R=0 ;; *) R=1 ;; esac
     check "cmdline.txt points at $EXPECT" "$R"

@@ -73,6 +73,25 @@ assert_eq "$(count_in_file "$BOOT/cmdline.txt" "systemd.unit=")" "1"
 it "re-flashing still leaves exactly one line"
 assert_eq "$(wc -l < "$BOOT/cmdline.txt" | tr -d ' ')" "1"
 
+# verify-card decides the card's phase from whether firstrun.log is present,
+# so a log left over from a previous boot makes a freshly armed card report
+# "stage A started but did NOT complete".
+echo "old stage A output" > "$BOOT/transfer-station/firstrun.log"
+echo "old stage B output" > "$BOOT/transfer-station/provision.log"
+flash_into "$BOOT" || { cat "$WORK/out.log"; exit 1; }
+
+it "re-flashing clears the previous firstrun.log"
+assert_no_file "$BOOT/transfer-station/firstrun.log"
+
+it "re-flashing clears the previous provision.log"
+assert_no_file "$BOOT/transfer-station/provision.log"
+
+it "the previous firstrun.log is kept as .prev"
+assert_contains "$(cat "$BOOT/transfer-station/firstrun.log.prev")" "old stage A output"
+
+it "the previous provision.log is kept as .prev"
+assert_contains "$(cat "$BOOT/transfer-station/provision.log.prev")" "old stage B output"
+
 echo
 echo "== payload staging =="
 it "firstrun.sh is present"      ; assert_file "$BOOT/transfer-station/firstrun.sh"
