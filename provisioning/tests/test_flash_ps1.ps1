@@ -93,6 +93,21 @@ try {
     It "still a single line" { ($cmdline2.TrimEnd("`n")).Split("`n").Count -eq 1 }
 
     Write-Host ""
+    Write-Host "== stale log rotation =="
+    # verify-card decides the card's phase from whether firstrun.log is
+    # present, so a log left from a previous boot makes a freshly armed card
+    # report "stage A started but did NOT complete".
+    $pl  = Join-Path $boot 'transfer-station'
+    $enc = New-Object System.Text.UTF8Encoding($false)   # $lf is local to New-FakeBoot
+    [IO.File]::WriteAllText((Join-Path $pl "firstrun.log"),  "old stage A output`n", $enc)
+    [IO.File]::WriteAllText((Join-Path $pl "provision.log"), "old stage B output`n", $enc)
+    & (Join-Path $Prov 'flash.ps1') -BootDrive $boot | Out-Null
+    It "re-flashing clears the previous firstrun.log"  { -not (Test-Path (Join-Path $pl "firstrun.log")) }
+    It "re-flashing clears the previous provision.log" { -not (Test-Path (Join-Path $pl "provision.log")) }
+    It "previous firstrun.log kept as .prev"  { (Get-Content (Join-Path $pl "firstrun.log.prev")  -Raw).Contains("old stage A output") }
+    It "previous provision.log kept as .prev" { (Get-Content (Join-Path $pl "provision.log.prev") -Raw).Contains("old stage B output") }
+
+    Write-Host ""
     Write-Host "== payload staging =="
     $payload = Join-Path $boot 'transfer-station'
     It "firstrun.sh present"      { Test-Path (Join-Path $payload 'firstrun.sh') }
