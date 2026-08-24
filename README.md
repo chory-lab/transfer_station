@@ -14,15 +14,16 @@ configured for that segment.
 
 <h3>Windows</h3>
 
-Flash the card with
-<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a>, no
-customisation needed. In Imager, pick <b>Choose OS &rarr; Raspberry Pi OS
-(other) &rarr; Raspberry Pi OS Lite (64-bit)</b>. Leave the card inserted,
-then paste into PowerShell:
+Insert the SD card, then paste into an <b>Administrator</b> PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 | iex
 ```
+
+The card can be blank &mdash; the script writes Raspberry Pi OS Lite (64-bit)
+for you. Requires
+<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> to be
+installed, which it uses to do the write.
 
 <h3>Linux / macOS</h3>
 
