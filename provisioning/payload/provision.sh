@@ -14,6 +14,17 @@ TMPL=/usr/local/share/transfer-station.service.tmpl
 # shellcheck disable=SC1090
 . "$CONFIG"
 
+# Mirror everything to the FAT boot partition as well as the journal. If this
+# stage fails, the journal lives on ext4 and is unreadable from a Windows or
+# macOS machine -- but the card's boot partition mounts anywhere, so pulling
+# the SD card and reading provision.log is the quickest way to see why.
+for _b in /boot/firmware /boot; do
+    if [ -d "$_b/transfer-station" ]; then
+        exec > >(tee -a "$_b/transfer-station/provision.log") 2>&1
+        break
+    fi
+done
+
 echo "=== transfer-station provisioning $(date -u) ==="
 
 # CI mode: exercise the package/venv work inside an arm64 container, where

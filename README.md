@@ -108,10 +108,11 @@ journalctl -u transfer-station -f          # live logs
 ```
 
 <blockquote>
-<b>Ethernet requires a Pi with an ethernet port.</b> The Raspberry Pi Zero 2 W
-in the parts list below has none &mdash; it is Wi-Fi only. Use a Pi 4 (or any
-model with an RJ45 jack), or add a USB ethernet adapter, otherwise there is no
-<code>eth0</code> for the static address to bind to.
+<b>Target hardware: Raspberry Pi 4 Model B</b>, which has a built-in ethernet
+port presented as <code>eth0</code>. Note the parts list further down still
+lists a Raspberry Pi Zero 2 W, which is Wi-Fi only and has no ethernet jack &mdash;
+that entry is stale and should be reconciled. A Pi 5 would also need
+<code>rpi-lgpio</code> in place of <code>python3-rpi.gpio</code>.
 </blockquote>
 
 <h2>Manual Setup (alternative to flashing)</h2>

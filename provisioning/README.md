@@ -47,6 +47,24 @@ sudo ./provisioning/flash.sh --image raspios-bookworm-arm64-lite.img.xz --device
 ./provisioning/flash.sh --boot /media/$USER/bootfs
 ```
 
+## Troubleshooting a failed first boot
+
+Both stages write a log to the **FAT boot partition**, which mounts on any
+machine. If a boot goes wrong, pull the SD card, put it in your laptop and
+read:
+
+```
+transfer-station/firstrun.log    # stage A
+transfer-station/provision.log   # stage B
+```
+
+Stage B also prints to the console, so an HDMI monitor shows it live.
+
+If stage A or B fails, the Pi falls back to DHCP with SSH enabled. Note that
+on the isolated switch there is **no DHCP server**, so it will land on a
+link-local `169.254.x.x` address and be effectively unreachable — plug it back
+into a router to recover it over the network.
+
 ## First boot: plug into the internet once
 
 The card boots in three phases:
