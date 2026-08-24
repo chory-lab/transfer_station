@@ -1,0 +1,6 @@
+# Pure-Python runtime deps, installed into .venv by uv during provisioning.
+# RPi.GPIO is deliberately NOT here: it is a C extension and comes from the
+# apt package python3-rpi.gpio, made visible via --system-site-packages.
+Flask>=2.2.2
+Flask-Caching>=2.0
+redis>=4.5

@@ -1,0 +1,110 @@
+name: image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static:
+    name: static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash syntax
+        run: |
+          find provisioning -name '*.sh' -print0 | xargs -0 -n1 bash -n
+
+      - name: shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck -S warning -x $(find provisioning -name '*.sh')
+
+      - name: systemd unit parses
+        run: |
+          sed -e 's|__PI_USER__|chorylab|g' \
+              -e 's|__REPO_DEST__|/home/chorylab/transfer_station|g' \
+              -e 's|__SERVER_PORT__|5000|g' \
+              provisioning/payload/transfer-station.service > /tmp/transfer-station.service
+          systemd-analyze verify /tmp/transfer-station.service 2>&1 | tee /tmp/verify.log
+          # Only fail on genuine syntax problems; the runner legitimately
+          # complains that User=chorylab and the ExecStart path do not exist.
+          ! grep -qiE 'invalid|failed to parse|unknown lvalue' /tmp/verify.log
+
+      - name: config.env is parseable by both shells
+        run: |
+          bash -c '. provisioning/config.env; echo "$ETH_ADDRESS:$SERVER_PORT"'
+
+  flash-linux:
+    name: flash pipeline (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: injection tests
+        run: bash provisioning/tests/test_flash_inject.sh
+
+      - name: full image write via loopback SD card
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dosfstools parted
+          sudo bash provisioning/tests/test_flash_image.sh
+
+  flash-windows:
+    name: flash pipeline (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: flash.ps1 parses
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./provisioning/flash.ps1), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.ToString() }; exit 1 }
+
+      - name: flash.ps1 behaviour + parity with flash.sh
+        shell: pwsh
+        run: ./provisioning/tests/test_flash_ps1.ps1
+
+  pipeline-arm64:
+    name: full provisioning + deployment (arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: enable arm64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      # Debian arm64, NOT Raspberry Pi OS: no archive.raspberrypi.com sources,
+      # so package versions differ from the device. This validates the logic
+      # and dependency resolution, not device fidelity.
+      - name: stage A -> stage B -> deployment, on one filesystem
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD:/src:ro" \
+            balenalib/raspberrypi3-64-debian:bookworm \
+            bash -euo pipefail -c '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                  sudo adduser passwd ca-certificates curl xz-utils \
+                  procps iproute2 sudo
+
+              cp -r /src /work && chmod -R u+w /work
+
+              echo "########## stage A: firstrun.sh ##########"
+              TS_ALLOW_DESTRUCTIVE=1 bash /work/provisioning/tests/test_firstrun.sh
+
+              echo "########## stage B: provision.sh ##########"
+              TS_CI=1 bash /usr/local/sbin/transfer-station-provision
+
+              echo "########## deployment ##########"
+              TS_ALLOW_DESTRUCTIVE=1 bash /work/provisioning/tests/test_deploy.sh
+            '

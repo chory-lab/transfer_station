@@ -1,0 +1,22 @@
+[Unit]
+Description=Transfer Station stepper-rail Flask server
+Documentation=https://github.com/chory-lab/transfer_station
+After=network.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=__PI_USER__
+Group=__PI_USER__
+SupplementaryGroups=gpio dialout
+WorkingDirectory=__REPO_DEST__
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__REPO_DEST__/.venv/bin/flask --app api_step_motor run --host=0.0.0.0 --port=__SERVER_PORT__
+
+# The rail is a physical device: if the server dies, bring it straight back
+# rather than leaving the motor unreachable mid-run.
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -61,7 +61,11 @@ def index():
         try:
             step_delay = float(request.form['step_delay'])
         except:
-            step_delay = 0.00000000000005
+            # Applied to both the high and low phase of each pulse, so the
+            # step period is 2*step_delay -> 400 half-steps/s = 200 full
+            # steps/s = 1 rev/s. Sits inside the A4988 pull-in region, so
+            # the motor starts from rest without ramping and won't stall.
+            step_delay = 0.00125
         
         #go left till end button
         if request.form.get('go_left') == 'Go Left' or request.get_data() == b'go_left':

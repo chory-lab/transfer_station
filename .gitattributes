@@ -1,0 +1,16 @@
+# The Pi runs these with bash. A CRLF in firstrun.sh breaks the shebang and
+# the device silently never provisions, so pin them to LF regardless of the
+# platform they are cloned onto.
+*.sh                       text eol=lf
+provisioning/payload/*     text eol=lf
+provisioning/config.env    text eol=lf
+requirements.txt           text eol=lf
+
+# PowerShell stays native to Windows.
+*.ps1                      text eol=crlf
+
+# Don't let git mangle the hardware files.
+"3D Files/**"              binary
+*.res                      binary
+*.lay                      binary
+*.rdb                      binary
