@@ -89,6 +89,47 @@ so nothing can be written to it. Either:
     throw "Assigned ${free}: but the boot partition never appeared there."
 }
 
+# --- offline dependency bundle -------------------------------------------
+# Fetched for EVERY card, not only ones we image ourselves: a card that
+# already had Raspberry Pi OS on it needs the bundle just as much. The
+# manifest also pins the image its .debs were built against, which is what
+# $ImageUrl uses when we do write the OS.
+function Get-OfflineBundle {
+    $dir = Join-Path $Cache "bundle"
+    if (Test-Path (Join-Path $dir "manifest.env")) {
+        Write-Host ">> using the cached offline bundle"
+        return $dir
+    }
+    Write-Host ">> downloading the offline dependency bundle"
+    try {
+        New-Item -ItemType Directory -Force -Path $Cache | Out-Null
+        $bz = Join-Path $Cache "bundle.tar.gz"
+        Invoke-WebRequest -Uri $BundleUrl -OutFile $bz -UseBasicParsing
+        if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        & tar -xzf $bz -C $dir
+        return $dir
+    } catch {
+        Write-Warning "No bundle available; the Pi will need one connected boot."
+        if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+        return $null
+    }
+}
+
+function Read-BundleManifest {
+    param([string]$Dir)
+    $m = @{}
+    if (-not $Dir) { return $m }
+    $mf = Join-Path $Dir "manifest.env"
+    if (Test-Path $mf) {
+        Get-Content $mf | ForEach-Object {
+            if ($_ -match "^([A-Z_]+)=(.*)$") { $m[$Matches[1]] = $Matches[2] }
+        }
+    }
+    return $m
+}
+
+
 function Show-VolumeDiagnostics {
     Write-Host ''
     Write-Host 'Drives Windows can currently see:' -ForegroundColor DarkGray
@@ -99,6 +140,17 @@ function Show-VolumeDiagnostics {
             Format-Table -AutoSize | Out-String -Width 120 | Write-Host
     } catch { Write-Host '  (Get-Volume failed)' }
     Write-Host 'If one of those is the card, re-run with:  -BootDrive X:' -ForegroundColor DarkGray
+}
+
+# --- offline bundle (needed whether or not we write the OS) ---------------
+$bundleDir = Get-OfflineBundle
+$manifest  = Read-BundleManifest $bundleDir
+if ($manifest["BUNDLE_CODENAME"]) {
+    Write-Host "   bundle: $($manifest['BUNDLE_CODENAME']) (built $($manifest['BUNDLE_BUILT']))"
+    if (-not $ImageUrl) { $ImageUrl = $manifest["BUNDLE_IMAGE_URL"] }
+}
+if (-not $ImageUrl) {
+    $ImageUrl = "https://downloads.raspberrypi.com/raspios_lite_arm64_latest"
 }
 
 # --- find the card --------------------------------------------------------
@@ -177,38 +229,6 @@ if ($BootDrive) {
 
         New-Item -ItemType Directory -Force -Path $Cache | Out-Null
 
-        # --- offline dependency bundle -----------------------------------
-        # Fetched first: it pins the exact OS image its .debs were built
-        # against, so it decides which image we write. A mismatched image
-        # makes the bundle useless and forces a connected boot after all.
-        $bundleDir = Join-Path $Cache "bundle"
-        if (-not (Test-Path (Join-Path $bundleDir "manifest.env"))) {
-            Write-Host ">> downloading the offline dependency bundle"
-            try {
-                $bz = Join-Path $Cache "bundle.tar.gz"
-                Invoke-WebRequest -Uri $BundleUrl -OutFile $bz -UseBasicParsing
-                if (Test-Path $bundleDir) { Remove-Item -Recurse -Force $bundleDir }
-                New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
-                & tar -xzf $bz -C $bundleDir
-            } catch {
-                Write-Warning "No bundle available; the Pi will need one connected boot."
-                if (Test-Path $bundleDir) { Remove-Item -Recurse -Force $bundleDir }
-            }
-        } else {
-            Write-Host ">> using the cached offline bundle"
-        }
-        $manifest = @{}
-        $mf = Join-Path $bundleDir "manifest.env"
-        if (Test-Path $mf) {
-            Get-Content $mf | ForEach-Object {
-                if ($_ -match "^([A-Z_]+)=(.*)$") { $manifest[$Matches[1]] = $Matches[2] }
-            }
-            Write-Host "   bundle: $($manifest['BUNDLE_CODENAME']) (built $($manifest['BUNDLE_BUILT']))"
-            if (-not $ImageUrl) { $ImageUrl = $manifest["BUNDLE_IMAGE_URL"] }
-        }
-        if (-not $ImageUrl) {
-            $ImageUrl = "https://downloads.raspberrypi.com/raspios_lite_arm64_latest"
-        }
 
         $xz = Join-Path $Cache 'raspios.img.xz'
         if (-not (Test-Path $xz)) {
@@ -269,9 +289,10 @@ try {
 
     Write-Host '>> provisioning the card'
     # Hand the bundle to the flasher so the card carries its own deps.
-    $bundleDir = Join-Path $Cache 'bundle'
     $bundleArg = @{}
-    if (Test-Path (Join-Path $bundleDir 'manifest.env')) { $bundleArg['Bundle'] = $bundleDir }
+    if ($bundleDir -and (Test-Path (Join-Path $bundleDir 'manifest.env'))) {
+        $bundleArg['Bundle'] = $bundleDir
+    }
     & (Join-Path $src.FullName 'provisioning\flash.ps1') -BootDrive $boot @bundleArg
 
     Write-Host ''
@@ -285,7 +306,7 @@ try {
 }
 
 Write-Host ''
-$haveBundle = Test-Path (Join-Path (Join-Path $Cache 'bundle') 'manifest.env')
+$haveBundle = [bool]$bundleDir -and (Test-Path (Join-Path $bundleDir 'manifest.env'))
 if ($haveBundle) {
     Write-Host 'Done. The card carries all its dependencies, so the Pi needs NO' -ForegroundColor Green
     Write-Host 'internet. Put it in the Pi and boot it. It reboots twice, then:'

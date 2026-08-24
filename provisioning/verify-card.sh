@@ -54,10 +54,20 @@ echo
 
 if [ "$PHASE" = "preboot" ]; then
     echo "Boot hook"
+    # Must mirror flash.sh exactly. Real pi-gen issue.txt carries no codename,
+    # only a build date, so the date is the signal that actually exists --
+    # matching on codenames alone silently picks the wrong path.
     RELEASE="$(cat "$BOOT/issue.txt" 2>/dev/null || true)"
+    BUILT="$(printf '%s' "$RELEASE" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 | tr -d '-' || true)"
     case "$RELEASE" in
-        *bookworm*|*trixie*|*forky*) EXPECT=/boot/firmware/transfer-station/firstrun.sh ;;
-        *)                           EXPECT=/boot/transfer-station/firstrun.sh ;;
+        *bookworm*|*trixie*|*forky*)
+            EXPECT=/boot/firmware/transfer-station/firstrun.sh ;;
+        *)
+            if [ -n "$BUILT" ] && [ "$BUILT" -ge 20231010 ]; then
+                EXPECT=/boot/firmware/transfer-station/firstrun.sh
+            else
+                EXPECT=/boot/transfer-station/firstrun.sh
+            fi ;;
     esac
     case "$CMDLINE" in *"systemd.run=$EXPECT"*) R=0 ;; *) R=1 ;; esac
     check "cmdline.txt points at $EXPECT" "$R"
@@ -113,6 +123,16 @@ if [ "$PHASE" = "preboot" ]; then
         check "bundle present ($(find "$PAYLOAD/bundle/debs" -name '*.deb' 2>/dev/null | wc -l) debs, $(find "$PAYLOAD/bundle/wheels" -name '*.whl' 2>/dev/null | wc -l) wheels)" 0
         check "uv binary bundled" "$(has "$PAYLOAD/bundle/uv.tar.gz")"
         info "built for ${BUNDLE_CODENAME:-?} on ${BUNDLE_BUILT:-?}"
+        # .debs only install cleanly on the release they came from. Catch a
+        # mismatch here rather than letting the Pi discover it at first boot.
+        if [ -n "$BUILT" ] && [ -n "${BUNDLE_IMAGE_URL:-}" ]; then
+            IMG_DATE="$(printf '%s' "$BUNDLE_IMAGE_URL" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | tail -1 | tr -d '-')"
+            if [ -n "$IMG_DATE" ] && [ "$IMG_DATE" != "$BUILT" ]; then
+                note "card image is dated ${BUILT}, bundle was built against ${IMG_DATE}"
+                note "if the releases differ the bundle will be refused and the Pi"
+                note "will need a connected boot after all"
+            fi
+        fi
         info "the Pi will NOT need internet"
     else
         note "no offline bundle - the Pi will need one connected boot"
