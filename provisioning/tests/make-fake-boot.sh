@@ -14,11 +14,17 @@ printf '%s\n' \
 
 printf '%s\n' "dtparam=audio=on" "camera_auto_detect=1" > "$DIR/config.txt"
 
+# The real thing names no codename -- only a build date and the pi-gen commit.
+# Keep the fixture faithful to that, or the release detection is never tested.
 case "$RELEASE" in
     bookworm)
-        echo "Raspberry Pi reference 2024-11-19 (stage2, bookworm)" > "$DIR/issue.txt" ;;
+        printf '%s\n' "Raspberry Pi reference 2024-11-19" \
+          "Generated using pi-gen, https://github.com/RPi-Distro/pi-gen, deadbee, stage2" \
+          > "$DIR/issue.txt" ;;
     bullseye)
-        echo "Raspberry Pi reference 2023-05-03 (stage2, bullseye)" > "$DIR/issue.txt" ;;
+        printf '%s\n' "Raspberry Pi reference 2023-05-03" \
+          "Generated using pi-gen, https://github.com/RPi-Distro/pi-gen, deadbee, stage2" \
+          > "$DIR/issue.txt" ;;
     none)
         rm -f "$DIR/issue.txt" ;;
     *) echo "unknown release: $RELEASE" >&2; exit 2 ;;

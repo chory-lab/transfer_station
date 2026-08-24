@@ -27,15 +27,54 @@ password.
 
 ### Windows
 
-Flash the base image with Raspberry Pi Imager first (no customisation needed —
-this script supplies all of it), then:
+Flash the base image with Raspberry Pi Imager first, then:
 
 ```powershell
-.\provisioning\flash.ps1 -BootDrive E:
+.\provisioning\flash.ps1
 ```
 
-`E:` is the small FAT partition Windows mounts after imaging (the one with
-`config.txt` and `cmdline.txt` in it).
+It finds the card by looking for the FAT32 volume that has a `cmdline.txt` in
+it. Pass `-BootDrive E:` when more than one card is attached and you want to
+name the right one; `E:` is the small FAT partition Windows mounts after
+imaging (the one with `config.txt` and `cmdline.txt` in it).
+
+#### If the boot partition has no drive letter
+
+Windows does not always assign one. Disk Management then shows the partition
+under its `bootfs` label with the drive-letter column blank, and nothing --
+not `tar`, not PowerShell's own `New-Item` -- can write to it, because the
+only path it has is a `\\?\Volume{GUID}\` path that those tools reject.
+
+Both `flash.ps1` and `bootstrap.ps1` still *find* such a card, and will assign
+a free letter themselves if PowerShell was started with **Run as
+administrator**. Without elevation they stop and say so; assign the letter by
+hand instead:
+
+> Win+X -> Disk Management -> right-click the `bootfs` partition ->
+> Change Drive Letter and Paths -> Add -> OK
+
+### Which image, and Raspberry Pi Imager's customisation
+
+Lite 64-bit is the intended base, but Desktop and Full work too -- nothing
+here depends on the absence of a GUI.
+
+Current Imager versions provision through **cloud-init**: applying any OS
+customisation writes `user-data`, `meta-data` and `network-config` to the boot
+partition and appends `ds=nocloud;...` to `cmdline.txt`. That is compatible
+with the two-stage flow, but cloud-init runs *after* stage A and wins wherever
+the two overlap:
+
+| Setting | Winner on a customised card |
+|---|---|
+| hostname | Imager's, not `PI_HOSTNAME` |
+| account password | Imager's, not `PI_PASSWORD` |
+| SSH enabled | both do it |
+| isolated static IP | stage B (its profile has `autoconnect-priority=100`) |
+
+So either leave Imager's customisation switched off and let `config.env` own
+everything, or set it in Imager and treat `PI_HOSTNAME` and `PI_PASSWORD` as
+ignored. Stage B is ordered `After=cloud-final.service`, so the two never
+contend for the apt lock.
 
 ### Linux / macOS
 

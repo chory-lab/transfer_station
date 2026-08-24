@@ -36,10 +36,13 @@ function New-FakeBoot([string]$Dir, [string]$Release) {
     [IO.File]::WriteAllText((Join-Path $Dir 'cmdline.txt'),
         "console=serial0,115200 console=tty1 root=PARTUUID=1a2b3c4d-02 rootfstype=ext4 fsck.repair=yes rootwait quiet`n", $lf)
     [IO.File]::WriteAllText((Join-Path $Dir 'config.txt'), "dtparam=audio=on`n", $lf)
+    # The real issue.txt names no codename -- only a build date and the pi-gen
+    # commit. Keep the fixture faithful or release detection is never tested.
+    $tmpl = "Raspberry Pi reference {0}`nGenerated using pi-gen, https://github.com/RPi-Distro/pi-gen, deadbee, stage2`n"
     if ($Release -eq 'bookworm') {
-        [IO.File]::WriteAllText((Join-Path $Dir 'issue.txt'), "Raspberry Pi reference 2024-11-19 (stage2, bookworm)`n", $lf)
+        [IO.File]::WriteAllText((Join-Path $Dir 'issue.txt'), ($tmpl -f '2024-11-19'), $lf)
     } elseif ($Release -eq 'bullseye') {
-        [IO.File]::WriteAllText((Join-Path $Dir 'issue.txt'), "Raspberry Pi reference 2023-05-03 (stage2, bullseye)`n", $lf)
+        [IO.File]::WriteAllText((Join-Path $Dir 'issue.txt'), ($tmpl -f '2023-05-03'), $lf)
     }
     [IO.File]::WriteAllText((Join-Path $Dir 'userconf.txt'), "pi:`$6`$fakehash`n", $lf)
 }

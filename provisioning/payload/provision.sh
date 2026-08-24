@@ -117,8 +117,11 @@ may-fail=false
 method=disabled
 NMCONN
     chmod 600 "$KEYFILE"
-    # Drop NM's auto-generated DHCP profile so it cannot win the race.
-    find /etc/NetworkManager/system-connections -name 'Wired connection*' -delete 2>/dev/null || true
+    # Drop the auto-generated DHCP profiles so neither can win the race:
+    # NetworkManager's own, and the one cloud-init renders from network-config.
+    find /etc/NetworkManager/system-connections \
+        \( -name 'Wired connection*' -o -name 'cloud-init-*' \) \
+        -delete 2>/dev/null || true
 else
     echo "configuring ${ETH_IFACE} via dhcpcd"
     sed -i "/# BEGIN transfer-station/,/# END transfer-station/d" /etc/dhcpcd.conf
