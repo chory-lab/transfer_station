@@ -9,15 +9,9 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-CONFIG=/usr/local/share/transfer-station-config.env
-TMPL=/usr/local/share/transfer-station.service.tmpl
-# shellcheck disable=SC1090
-. "$CONFIG"
-
-# Mirror everything to the FAT boot partition as well as the journal. If this
-# stage fails, the journal lives on ext4 and is unreadable from a Windows or
-# macOS machine -- but the card's boot partition mounts anywhere, so pulling
-# the SD card and reading provision.log is the quickest way to see why.
+# Establish logging FIRST. Anything that can fail must fail into the log,
+# not before it exists -- sourcing the config used to come first, so a missing
+# config file killed this script under `set -e` with no output anywhere.
 for _b in /boot/firmware /boot; do
     if [ -d "$_b/transfer-station" ]; then
         exec > >(tee -a "$_b/transfer-station/provision.log") 2>&1
@@ -32,6 +26,16 @@ done
 trap 'sync' EXIT
 
 echo "=== transfer-station provisioning $(date -u) ==="
+
+CONFIG=/usr/local/share/transfer-station-config.env
+TMPL=/usr/local/share/transfer-station.service.tmpl
+if [ ! -f "$CONFIG" ]; then
+    echo "ERROR: $CONFIG is missing. Stage A should have installed it;" >&2
+    echo "       re-provision the card and boot again." >&2
+    exit 1
+fi
+# shellcheck disable=SC1090
+. "$CONFIG"
 
 # --- offline bundle -------------------------------------------------------
 # If the card carries a dependency bundle, everything installs from it and
