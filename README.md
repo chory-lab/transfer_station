@@ -5,106 +5,51 @@
 <h1>Introduction</h1>
 This repository holds the code (and previously used test code) for the functioning of the transfer system, or just the step motor rail. There are two parts to this README detailing the software components, and the hardware components of the transfer station system.
 
-<h2>SD Card Setup (Automated)</h2>
+<h2>SD Card Setup</h2>
 
-The <code>provisioning/</code> directory builds a ready-to-run SD card: this
-repo installed, the Flask server started automatically at boot, and the
-ethernet port pinned to a static address on an isolated network segment that
-is not reachable from the lab LAN.
+Builds a ready-to-run card: this repo installed, the server started at boot,
+and ethernet pinned to <code>192.168.10.1</code> on an isolated segment that
+is not reachable from the lab LAN. Assumes the controller PC is already
+configured for that segment.
 
-This replaces the manual Installation and Setup steps below. See
-<a href="provisioning/README.md">provisioning/README.md</a> for full detail.
+<h3>Windows</h3>
 
-<h3>1. Edit the configuration</h3>
-
-Open <code>provisioning/config.env</code> and set at minimum
-<code>PI_PASSWORD</code>. The defaults give you:
-
-| Setting | Default |
-|---|---|
-| UI | <code>http://192.168.10.1:5000</code> |
-| SSH | <code>ssh chorylab@192.168.10.1</code> |
-| Hostname | <code>transfer-station</code> |
-
-<blockquote>
-<code>api_step_motor.py</code> hardcodes
-<code>/home/chorylab/transfer_station/templates</code>, so <code>PI_USER</code>
-must stay <code>chorylab</code> unless you also change that path.
-</blockquote>
-
-<h3>2. Flash the card</h3>
-
-Use <b>Raspberry Pi OS Lite (64-bit)</b>. Both current Debian bases are
-supported &mdash; Bookworm (Debian 12) and Trixie (Debian 13) &mdash; and the
-flasher detects which one it is looking at. Taking whatever Raspberry Pi
-Imager offers as the current release is fine.
-
-<b>Windows.</b> Flash stock Raspberry Pi OS Lite (64-bit) with Raspberry Pi
-Imager first &mdash; no customisation needed, the script supplies all of it.
-Then, with the card still inserted:
+Flash <b>Raspberry Pi OS Lite (64-bit)</b> with
+<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a>
+(no customisation needed). Leave the card inserted, then paste into PowerShell:
 
 ```powershell
-.\provisioninglash.ps1 -BootDrive E:
+irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 | iex
 ```
 
-<code>E:</code> is the small FAT partition Windows mounts after imaging (the
-one containing <code>config.txt</code> and <code>cmdline.txt</code>).
+<h3>Linux / macOS</h3>
 
-<b>Linux / macOS.</b> Flash and provision in one step:
+Insert a blank card and paste into a terminal:
 
 ```bash
-sudo ./provisioning/flash.sh --image raspios-lite-arm64.img.xz --device /dev/sdX
+curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.sh | sudo bash
 ```
 
-Or provision a card you already flashed:
+<h3>Then</h3>
 
-```bash
-./provisioning/flash.sh --boot /media/$USER/bootfs
-```
-
-<h3>3. First boot &mdash; connect to the internet once</h3>
-
-The card boots in three phases:
-
-1. <b>Stage A</b> (offline) &mdash; creates the user, sets the hostname,
-   enables SSH, unpacks the repo, arms stage B. Reboots.
-2. <b>Stage B</b> (<b>needs internet</b>) &mdash; installs redis and the Python
-   dependencies with <code>uv</code>, installs the systemd service, then
-   applies the isolated static network config. Reboots.
-3. <b>Normal operation</b> &mdash; static IP, server running.
-
-So <b>plug the Pi into a normal router with internet for the first boot</b>.
-It takes a few minutes. Once it reboots into phase 3 you can move it to the
-isolated switch permanently.
-
-<h3>4. Configure the controller PC</h3>
-
-Give the NIC facing the switch a static address on the same subnet, with
-<b>no gateway</b>:
+The script asks which card to use and what password to set. When it finishes,
+put the card in the Pi and <b>boot it once plugged into a router with
+internet</b> &mdash; it installs its dependencies, reboots twice on its own,
+and comes up on the isolated link:
 
 ```
-address  192.168.10.2
-netmask  255.255.255.0
-gateway  <blank>
+http://192.168.10.1:5000        ssh chorylab@192.168.10.1
 ```
 
-Leave the normal Wi-Fi/LAN adapter alone &mdash; it keeps the default route,
-so the PC keeps internet access while talking to the Pi over the switch.
-
-<h3>Managing the service</h3>
-
-```bash
-sudo systemctl status transfer-station     # is it running?
-sudo systemctl restart transfer-station    # restart after a code change
-journalctl -u transfer-station -f          # live logs
-```
+Then move it to the switch. That is the whole procedure.
 
 <blockquote>
-<b>Target hardware: Raspberry Pi 4 Model B</b>, which has a built-in ethernet
-port presented as <code>eth0</code>. Note the parts list further down still
-lists a Raspberry Pi Zero 2 W, which is Wi-Fi only and has no ethernet jack &mdash;
-that entry is stale and should be reconciled. A Pi 5 would also need
-<code>rpi-lgpio</code> in place of <code>python3-rpi.gpio</code>.
+Needs a Pi with an ethernet port &mdash; a Pi 4 Model B is the target. The Pi
+Zero 2 W in the parts list below is Wi-Fi only and cannot do this.
+Logs land on the card itself (<code>transfer-station/*.log</code> on the boot
+partition) if a first boot goes wrong.
+See <a href="provisioning/README.md">provisioning/README.md</a> for
+configuration, internals and tests.
 </blockquote>
 
 <h2>Software</h2>
