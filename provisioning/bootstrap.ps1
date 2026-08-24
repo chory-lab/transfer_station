@@ -74,6 +74,13 @@ try {
 
     Write-Host '>> provisioning the card'
     & (Join-Path $src.FullName 'provisioning\flash.ps1') -BootDrive $boot
+
+    Write-Host ''
+    Write-Host '>> verifying the card'
+    & (Join-Path $src.FullName 'provisioning\verify-card.ps1') -BootDrive $boot
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Verification FAILED. Do not boot this card - re-run to rebuild it.'
+    }
 } finally {
     Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 }

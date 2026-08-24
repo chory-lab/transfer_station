@@ -20,7 +20,9 @@ jobs:
       - name: shellcheck
         run: |
           sudo apt-get update && sudo apt-get install -y shellcheck
-          shellcheck -S warning -x $(find provisioning -name '*.sh')
+          # SC1090: these scripts deliberately source config files whose path is
+          # only known at runtime.
+          shellcheck -S warning -x -e SC1090 $(find provisioning -name '*.sh')
 
       - name: systemd unit parses
         run: |

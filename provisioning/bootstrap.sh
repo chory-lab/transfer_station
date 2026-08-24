@@ -91,6 +91,21 @@ echo
 echo ">> writing the image and provisioning (a few minutes)"
 echo "$DEV" | bash "$SRC/provisioning/flash.sh" --image "$IMG" --device "$DEV"
 
+# --- 5. verify what actually landed on the card ---------------------------
+echo
+echo ">> verifying the card"
+BOOTMNT="$(mktemp -d)"
+BOOTPART="$(lsblk -lno NAME,FSTYPE "$DEV" | awk '$2=="vfat"{print "/dev/"$1; exit}')"
+mount "$BOOTPART" "$BOOTMNT"
+bash "$SRC/provisioning/verify-card.sh" "$BOOTMNT"
+VERIFY_RC=$?
+umount "$BOOTMNT"; rmdir "$BOOTMNT"
+if [ "$VERIFY_RC" -ne 0 ]; then
+    echo
+    echo "Verification FAILED. Do not boot this card -- re-run to rebuild it." >&2
+    exit 1
+fi
+
 echo
 echo "Done. Put the card in the Pi and boot it ONCE plugged into a router"
 echo "with internet. It reboots twice by itself, then comes up at:"

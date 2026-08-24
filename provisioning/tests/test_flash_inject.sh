@@ -43,7 +43,7 @@ it "cmdline.txt stays exactly one line"
 assert_eq "$(wc -l < "$BOOT/cmdline.txt" | tr -d ' ')" "1"
 
 it "cmdline.txt has no embedded CR"
-if grep -q $'\r' "$BOOT/cmdline.txt"; then fail "found CR in cmdline.txt"; else pass; fi
+if has_cr "$BOOT/cmdline.txt"; then fail "found CR in cmdline.txt"; else pass; fi
 
 echo
 echo "== release detection =="
@@ -97,7 +97,7 @@ assert_not_contains "$(cat "$BOOT/userconf.txt")" "changeme"
 # CRLF in firstrun.sh breaks the shebang and the Pi silently fails to provision.
 for f in firstrun.sh provision.sh config.env; do
     it "$f has LF line endings only"
-    if grep -q $'\r' "$BOOT/transfer-station/$f"; then fail "found CR in $f"; else pass; fi
+    if has_cr "$BOOT/transfer-station/$f"; then fail "found CR in $f"; else pass; fi
 done
 
 it "no leftover temp tarball on the boot partition"

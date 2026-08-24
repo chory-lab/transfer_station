@@ -94,10 +94,15 @@ TAR_EXCLUDES=(
 tar -czf "$TARDIR/repo.tar.gz" -C "$REPO_ROOT" "${TAR_EXCLUDES[@]}" .
 sudo cp "$TARDIR/repo.tar.gz" "$PAYLOAD/repo.tar.gz"
 
+# Strip CR on the way in. A checkout on Windows -- or one that git has
+# renormalised -- can leave CRLF in these files, and a CR after the shebang
+# makes the Pi fail to run firstrun.sh at all, silently.
 for f in firstrun.sh provision.sh transfer-station.service; do
-    sudo cp "$HERE/payload/$f" "$PAYLOAD/$f"
+    tr -d $'\r' < "$HERE/payload/$f" > "$TARDIR/$f"
+    sudo cp "$TARDIR/$f" "$PAYLOAD/$f"
 done
-sudo cp "$HERE/config.env" "$PAYLOAD/config.env"
+tr -d $'\r' < "$HERE/config.env" > "$TARDIR/config.env"
+sudo cp "$TARDIR/config.env" "$PAYLOAD/config.env"
 # FAT has no exec bit of its own; the Pi mounts vfat 0755 so this is advisory.
 sudo chmod 755 "$PAYLOAD/firstrun.sh" "$PAYLOAD/provision.sh" 2>/dev/null || true
 
