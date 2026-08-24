@@ -157,6 +157,20 @@ if (-not (Test-Path -LiteralPath $cmdlinePath)) {
 $payload = Join-Path $boot 'transfer-station'
 New-Item -ItemType Directory -Force -Path $payload | Out-Null
 
+# --- retire logs from a previous build ------------------------------------
+# Re-flashing rebuilds the card, so any log still sitting here describes a
+# card that no longer exists. Leaving it in place makes verify-card.ps1 read
+# "stage A started but did NOT complete" on a freshly armed card, because its
+# phase detection keys off firstrun.log being present. Rename rather than
+# delete: the log is the only record of what the previous boot did.
+foreach ($log in @('firstrun.log', 'provision.log')) {
+    $p = Join-Path $payload $log
+    if (Test-Path -LiteralPath $p) {
+        Move-Item -LiteralPath $p -Destination (Join-Path $payload "$log.prev") -Force
+        Write-Host "  kept previous $log as $log.prev"
+    }
+}
+
 # --- pack the repository --------------------------------------------------
 Write-Host "Packing repository..."
 $tarPath = Join-Path $payload 'repo.tar.gz'

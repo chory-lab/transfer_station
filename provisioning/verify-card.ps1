@@ -74,11 +74,21 @@ Write-Host ''
 if ($phase -eq 'preboot') {
 
     Write-Host 'Boot hook'
+    # Same rule as flash.ps1: pi-gen's issue.txt names no codename, only a
+    # build date, so matching codenames alone sends every current image down
+    # the pre-bookworm branch and this check fails on a perfectly good card.
     $release = ''
-    if (Test-Path (Join-Path $boot 'issue.txt')) {
+    if (Test-Path -LiteralPath (Join-Path $boot 'issue.txt')) {
         $release = [IO.File]::ReadAllText((Join-Path $boot 'issue.txt'))
     }
+    $bookwormPlus = $false
     if ($release -match 'bookworm|trixie|forky') {
+        $bookwormPlus = $true
+    } elseif ($release -match '\d{4}-\d{2}-\d{2}') {
+        $built = [datetime]::ParseExact($Matches[0], 'yyyy-MM-dd', $null)
+        $bookwormPlus = $built -ge [datetime]'2023-10-10'
+    }
+    if ($bookwormPlus) {
         $expected = '/boot/firmware/transfer-station/firstrun.sh'
     } else {
         $expected = '/boot/transfer-station/firstrun.sh'

@@ -92,6 +92,18 @@ TAR_EXCLUDES=(
     --exclude=./dump.rdb
 )
 tar -czf "$TARDIR/repo.tar.gz" -C "$REPO_ROOT" "${TAR_EXCLUDES[@]}" .
+# --- retire logs from a previous build ------------------------------------
+# Re-flashing rebuilds the card, so any log still here describes a card that
+# no longer exists, and verify-card's phase detection keys off firstrun.log
+# being present -- it would report a freshly armed card as a failed stage A.
+# Rename rather than delete: it is the only record of the previous boot.
+for _log in firstrun.log provision.log; do
+    if [ -f "$PAYLOAD/$_log" ]; then
+        sudo mv -f "$PAYLOAD/$_log" "$PAYLOAD/${_log}.prev"
+        echo "  kept previous $_log as ${_log}.prev"
+    fi
+done
+
 sudo cp "$TARDIR/repo.tar.gz" "$PAYLOAD/repo.tar.gz"
 
 # Strip CR on the way in. A checkout on Windows -- or one that git has

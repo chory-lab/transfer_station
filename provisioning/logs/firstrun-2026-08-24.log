@@ -1,0 +1,32 @@
+=== firstrun stage A Thu 18 Jun 00:32:02 UTC 2026 ===
+usermod: no changes
+Synchronizing state of ssh.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable ssh
+Created symlink '/etc/systemd/system/sshd.service' → '/usr/lib/systemd/system/ssh.service'.
+Created symlink '/etc/systemd/system/multi-user.target.wants/ssh.service' → '/usr/lib/systemd/system/ssh.service'.
+tar: ./.gitattributes: time stamp 2026-08-24 13:23:10 is 5860264.150894061 s in the future
+tar: ./.github: time stamp 2026-08-24 13:23:10 is 5860264.150568783 s in the future
+tar: ./A4988.py: time stamp 2026-08-24 13:23:10 is 5860264.150413801 s in the future
+tar: ./api_step_motor.py: time stamp 2026-08-24 13:23:10 is 5860264.150313227 s in the future
+tar: ./motor_functions.py: time stamp 2026-08-24 13:23:12 is 5860266.150228968 s in the future
+tar: ./PyHamilton Code: time stamp 2026-08-24 13:23:10 is 5860264.150074727 s in the future
+tar: ./README.md: time stamp 2026-08-24 14:08:34 is 5862988.149937098 s in the future
+tar: ./requirements.txt: time stamp 2026-08-24 13:23:12 is 5860266.149827172 s in the future
+tar: ./RpiMotorLib: time stamp 2026-08-24 13:23:10 is 5860264.149690505 s in the future
+tar: ./templates: time stamp 2026-08-24 13:23:12 is 5860266.149567912 s in the future
+tar: ./Test_Fan_1.py: time stamp 2026-08-24 13:23:10 is 5860264.149481264 s in the future
+tar: ./test_step_motor.py: time stamp 2026-08-24 13:23:12 is 5860266.149388986 s in the future
+tar: ./templates/buttons.html: time stamp 2026-08-24 13:23:12 is 5860266.149274875 s in the future
+tar: ./PyHamilton Code/hamilton_transfer.py: time stamp 2026-08-24 13:23:10 is 5860264.149189394 s in the future
+tar: ./PyHamilton Code/log: time stamp 2026-08-24 13:23:10 is 5860264.149038524 s in the future
+tar: ./PyHamilton Code/robot_method.py: time stamp 2026-08-24 13:23:10 is 5860264.148953838 s in the future
+tar: ./PyHamilton Code/Test_1.lay: time stamp 2026-08-24 13:23:10 is 5860264.148688098 s in the future
+tar: ./PyHamilton Code/Test_1.res: time stamp 2026-08-24 13:23:10 is 5860264.148544209 s in the future
+tar: ./PyHamilton Code/test_request.py: time stamp 2026-08-24 13:23:10 is 5860264.148429709 s in the future
+tar: ./PyHamilton Code/log/hamilton.log: time stamp 2026-08-24 13:23:10 is 5860264.147576024 s in the future
+tar: ./PyHamilton Code/log/main.log: time stamp 2026-08-24 13:23:10 is 5860264.144156598 s in the future
+tar: ./.github/workflows/image.yml: time stamp 2026-08-24 13:30:13 is 5860687.143711375 s in the future
+tar: ./.github/workflows: time stamp 2026-08-24 13:30:13 is 5860687.143578838 s in the future
+tar: .: time stamp 2026-08-24 13:30:13 is 5860687.14353569 s in the future
+Created symlink '/etc/systemd/system/multi-user.target.wants/transfer-station-provision.service' → '/etc/systemd/system/transfer-station-provision.service'.
+=== stage A complete, rebooting into stage B ===
