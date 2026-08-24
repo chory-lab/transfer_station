@@ -20,6 +20,15 @@ Insert the SD card, then paste into an <b>Administrator</b> PowerShell:
 irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 | iex
 ```
 
+If it cannot find the card, it lists the drives Windows can see. Point it at
+the right one explicitly (note this form downloads the script first, as
+<code>iex</code> cannot take parameters):
+
+```powershell
+irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 -OutFile bootstrap.ps1
+.ootstrap.ps1 -BootDrive E:
+```
+
 The card can be blank &mdash; the script writes Raspberry Pi OS Lite (64-bit)
 for you. Requires
 <a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> to be

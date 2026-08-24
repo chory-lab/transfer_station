@@ -9,6 +9,11 @@
 
   Requires Raspberry Pi Imager: https://www.raspberrypi.com/software/
 #>
+param(
+    # Skip detection and use this drive letter as the card, e.g. -BootDrive E:
+    [string]$BootDrive
+)
+
 $ErrorActionPreference = 'Stop'
 
 $RepoZip  = 'https://github.com/chory-lab/transfer_station/archive/refs/heads/main.zip'
@@ -29,13 +34,44 @@ function Find-Imager {
 }
 
 # --- is a Raspberry Pi OS card already present? ---------------------------
+# Deliberately does NOT filter on FileSystem: Get-Volume reports that
+# property inconsistently (it can come back empty for a perfectly good
+# partition), which silently hides the card. The presence of cmdline.txt is
+# the real signal, so just test every drive letter we can see.
 function Get-PiBootVolume {
-    Get-Volume |
-        Where-Object { $_.DriveLetter -and $_.FileSystem -eq 'FAT32' } |
-        Where-Object { Test-Path (Join-Path "$($_.DriveLetter):\" 'cmdline.txt') }
+    $letters = @()
+    try { $letters += (Get-Volume -ErrorAction Stop | Where-Object DriveLetter | ForEach-Object { $_.DriveLetter }) } catch {}
+    try { $letters += (Get-PSDrive -PSProvider FileSystem -ErrorAction Stop | ForEach-Object { $_.Name }) } catch {}
+    $letters = $letters | Where-Object { $_ } | ForEach-Object { ("$_").Trim() } | Sort-Object -Unique
+    foreach ($l in $letters) {
+        $root = $l.TrimEnd(":") + ":" + [char]92
+        if (Test-Path (Join-Path $root "cmdline.txt")) {
+            [pscustomobject]@{ DriveLetter = $l.TrimEnd(":") }
+        }
+    }
 }
 
-$existing = @(Get-PiBootVolume)
+function Show-VolumeDiagnostics {
+    Write-Host ""
+    Write-Host "Drives Windows can currently see:" -ForegroundColor DarkGray
+    try {
+        Get-Volume | Where-Object DriveLetter |
+            Select-Object DriveLetter, FileSystemLabel, FileSystem, DriveType,
+                          @{n="SizeGB";e={[math]::Round($_.Size/1GB,2)}} |
+            Format-Table -AutoSize | Out-String -Width 120 | Write-Host
+    } catch { Write-Host "  (Get-Volume failed)" }
+    Write-Host "If one of those is the card, re-run with:  -BootDrive X:" -ForegroundColor DarkGray
+}
+
+if ($BootDrive) {
+    $forced = $BootDrive.TrimEnd([char]92).TrimEnd(":") + ":"
+    if (-not (Test-Path (Join-Path ($forced + [char]92) "cmdline.txt"))) {
+        throw "$forced has no cmdline.txt - that is not a Raspberry Pi OS boot partition."
+    }
+    $existing = @([pscustomobject]@{ DriveLetter = $forced.TrimEnd(":") })
+} else {
+    $existing = @(Get-PiBootVolume)
+}
 
 if ($existing.Count -gt 0) {
     if ($existing.Count -eq 1) {
@@ -45,7 +81,7 @@ if ($existing.Count -gt 0) {
         Write-Host ''
         Write-Host 'Multiple Raspberry Pi OS cards found:'
         for ($i = 0; $i -lt $existing.Count; $i++) {
-            Write-Host "  [$($i+1)] $($existing[$i].DriveLetter): ($([math]::Round($existing[$i].Size/1GB,1)) GB)"
+            Write-Host "  [$($i+1)] $($existing[$i].DriveLetter):"
         }
         $c = Read-Host "Which one? [1-$($existing.Count)]"
         $boot = "$($existing[[int]$c - 1].DriveLetter):"
@@ -55,6 +91,7 @@ if ($existing.Count -gt 0) {
     Write-Host ''
     Write-Host 'No Raspberry Pi OS card found - the card looks blank.'
     Write-Host 'This script can write Raspberry Pi OS Lite (64-bit) for you.'
+    Show-VolumeDiagnostics
 
     $imager = Find-Imager
     if (-not $imager) {
