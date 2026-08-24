@@ -38,7 +38,7 @@ mkdir -p "$BOOTDIR"
 # TS_KEEP_BOOT=1 means we are running against a real Raspberry Pi OS boot
 # partition, so keep its genuine cmdline.txt/issue.txt instead of synthesising.
 if [ "${TS_KEEP_BOOT:-0}" != "1" ]; then
-    "$HERE/make-fake-boot.sh" "$BOOTDIR" bookworm
+    bash "$HERE/make-fake-boot.sh" "$BOOTDIR" bookworm
 fi
 
 cp "$BOOTDIR/cmdline.txt" "$BOOTDIR/cmdline.txt.orig"

@@ -16,7 +16,7 @@ if [ "${TS_ALLOW_DESTRUCTIVE:-0}" != "1" ]; then
 fi
 
 CONFIG=/usr/local/share/transfer-station-config.env
-[ -f "$CONFIG" ] || CONFIG=/src/provisioning/config.env
+[ -f "$CONFIG" ] || CONFIG="$(cd "$HERE/.." && pwd)/config.env"
 # shellcheck disable=SC1090
 . "$CONFIG"
 
@@ -123,7 +123,7 @@ assert_eq "$(redis-cli ping 2>/dev/null)" "PONG"
 EXECSTART="$(grep '^ExecStart=' "$UNIT" | cut -d= -f2-)"
 echo "  ExecStart: $EXECSTART"
 
-cd "$REPO_DEST"
+cd "$REPO_DEST" || exit 1
 env PYTHONPATH="$STUB" runuser -u "$PI_USER" -- \
     env PYTHONPATH="$STUB" $EXECSTART >/tmp/server.log 2>&1 &
 SERVER_PID=$!

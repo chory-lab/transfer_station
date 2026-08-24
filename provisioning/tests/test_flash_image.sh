@@ -47,7 +47,7 @@ SFDISK
 SRC_LOOP="$(losetup --show -fP "$WORK/raspios.img")"
 mkfs.vfat -F 32 -n bootfs "${SRC_LOOP}p1" >/dev/null
 mount "${SRC_LOOP}p1" "$MNT"
-"$HERE/make-fake-boot.sh" "$MNT" bookworm
+bash "$HERE/make-fake-boot.sh" "$MNT" bookworm
 umount "$MNT"
 losetup -d "$SRC_LOOP"; SRC_LOOP=""
 

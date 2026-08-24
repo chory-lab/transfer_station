@@ -23,7 +23,7 @@ flash_into() {  # flash_into <boot-dir>
 }
 
 echo "== cmdline.txt hook (bookworm) =="
-BOOT="$WORK/bw"; "$HERE/make-fake-boot.sh" "$BOOT" bookworm
+BOOT="$WORK/bw"; bash "$HERE/make-fake-boot.sh" "$BOOT" bookworm
 flash_into "$BOOT" || { cat "$WORK/out.log"; exit 1; }
 CMDLINE="$(cat "$BOOT/cmdline.txt")"
 
@@ -47,7 +47,7 @@ if grep -q $'\r' "$BOOT/cmdline.txt"; then fail "found CR in cmdline.txt"; else 
 
 echo
 echo "== release detection =="
-BOOT_BULLSEYE="$WORK/be"; "$HERE/make-fake-boot.sh" "$BOOT_BULLSEYE" bullseye
+BOOT_BULLSEYE="$WORK/be"; bash "$HERE/make-fake-boot.sh" "$BOOT_BULLSEYE" bullseye
 flash_into "$BOOT_BULLSEYE" || { cat "$WORK/out.log"; exit 1; }
 it "bullseye uses the /boot mount path"
 assert_contains "$(cat "$BOOT_BULLSEYE/cmdline.txt")" "systemd.run=/boot/transfer-station/firstrun.sh"
@@ -55,7 +55,7 @@ assert_contains "$(cat "$BOOT_BULLSEYE/cmdline.txt")" "systemd.run=/boot/transfe
 it "bullseye does NOT use the /boot/firmware path"
 assert_not_contains "$(cat "$BOOT_BULLSEYE/cmdline.txt")" "/boot/firmware/"
 
-BOOT_NONE="$WORK/none"; "$HERE/make-fake-boot.sh" "$BOOT_NONE" none
+BOOT_NONE="$WORK/none"; bash "$HERE/make-fake-boot.sh" "$BOOT_NONE" none
 flash_into "$BOOT_NONE" || { cat "$WORK/out.log"; exit 1; }
 it "missing issue.txt falls back to the /boot path"
 assert_contains "$(cat "$BOOT_NONE/cmdline.txt")" "systemd.run=/boot/transfer-station/firstrun.sh"
