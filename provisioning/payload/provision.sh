@@ -25,6 +25,12 @@ for _b in /boot/firmware /boot; do
     fi
 done
 
+# Flush the log to the card on EVERY exit path, not just success. Without
+# this, a failed provisioning boot could lose provision.log to the page cache
+# if the Pi is powered off before the kernel's writeback timer fires -- which
+# is precisely when the log matters most.
+trap 'sync' EXIT
+
 echo "=== transfer-station provisioning $(date -u) ==="
 
 # CI mode: exercise the package/venv work inside an arm64 container, where
