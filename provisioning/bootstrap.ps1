@@ -17,7 +17,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $RepoZip  = 'https://github.com/chory-lab/transfer_station/archive/refs/heads/main.zip'
-$ImageUrl = 'https://downloads.raspberrypi.com/raspios_lite_arm64_latest'
+$ImageUrl  = $null   # set from the bundle manifest, or the current release
+$BundleUrl = 'https://github.com/chory-lab/transfer_station/releases/latest/download/offline-bundle.tar.gz'
 $Cache    = Join-Path $env:LOCALAPPDATA 'transfer-station'
 
 Write-Host ''
@@ -175,6 +176,40 @@ if ($BootDrive) {
         if ((Read-Host '  Type ERASE to continue') -ne 'ERASE') { Write-Host 'Aborted.'; return }
 
         New-Item -ItemType Directory -Force -Path $Cache | Out-Null
+
+        # --- offline dependency bundle -----------------------------------
+        # Fetched first: it pins the exact OS image its .debs were built
+        # against, so it decides which image we write. A mismatched image
+        # makes the bundle useless and forces a connected boot after all.
+        $bundleDir = Join-Path $Cache "bundle"
+        if (-not (Test-Path (Join-Path $bundleDir "manifest.env"))) {
+            Write-Host ">> downloading the offline dependency bundle"
+            try {
+                $bz = Join-Path $Cache "bundle.tar.gz"
+                Invoke-WebRequest -Uri $BundleUrl -OutFile $bz -UseBasicParsing
+                if (Test-Path $bundleDir) { Remove-Item -Recurse -Force $bundleDir }
+                New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
+                & tar -xzf $bz -C $bundleDir
+            } catch {
+                Write-Warning "No bundle available; the Pi will need one connected boot."
+                if (Test-Path $bundleDir) { Remove-Item -Recurse -Force $bundleDir }
+            }
+        } else {
+            Write-Host ">> using the cached offline bundle"
+        }
+        $manifest = @{}
+        $mf = Join-Path $bundleDir "manifest.env"
+        if (Test-Path $mf) {
+            Get-Content $mf | ForEach-Object {
+                if ($_ -match "^([A-Z_]+)=(.*)$") { $manifest[$Matches[1]] = $Matches[2] }
+            }
+            Write-Host "   bundle: $($manifest['BUNDLE_CODENAME']) (built $($manifest['BUNDLE_BUILT']))"
+            if (-not $ImageUrl) { $ImageUrl = $manifest["BUNDLE_IMAGE_URL"] }
+        }
+        if (-not $ImageUrl) {
+            $ImageUrl = "https://downloads.raspberrypi.com/raspios_lite_arm64_latest"
+        }
+
         $xz = Join-Path $Cache 'raspios.img.xz'
         if (-not (Test-Path $xz)) {
             Write-Host ''
@@ -233,7 +268,11 @@ try {
     ($kept + "PI_PASSWORD_B64=$b64") | Set-Content $cfg -Encoding utf8
 
     Write-Host '>> provisioning the card'
-    & (Join-Path $src.FullName 'provisioning\flash.ps1') -BootDrive $boot
+    # Hand the bundle to the flasher so the card carries its own deps.
+    $bundleDir = Join-Path $Cache 'bundle'
+    $bundleArg = @{}
+    if (Test-Path (Join-Path $bundleDir 'manifest.env')) { $bundleArg['Bundle'] = $bundleDir }
+    & (Join-Path $src.FullName 'provisioning\flash.ps1') -BootDrive $boot @bundleArg
 
     Write-Host ''
     Write-Host '>> verifying the card'
@@ -246,7 +285,13 @@ try {
 }
 
 Write-Host ''
-Write-Host 'Done. Put the card in the Pi and boot it ONCE plugged into a router' -ForegroundColor Green
-Write-Host 'with internet. It reboots twice by itself, then comes up at:'
+$haveBundle = Test-Path (Join-Path (Join-Path $Cache 'bundle') 'manifest.env')
+if ($haveBundle) {
+    Write-Host 'Done. The card carries all its dependencies, so the Pi needs NO' -ForegroundColor Green
+    Write-Host 'internet. Put it in the Pi and boot it. It reboots twice, then:'
+} else {
+    Write-Host 'Done. No offline bundle was available, so boot the Pi ONCE plugged' -ForegroundColor Yellow
+    Write-Host 'into a router with internet. It reboots twice by itself, then:'
+}
 Write-Host ''
 Write-Host '    http://192.168.10.1:5000     ssh chorylab@192.168.10.1'

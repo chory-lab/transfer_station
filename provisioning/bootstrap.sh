@@ -11,7 +11,8 @@
 set -euo pipefail
 
 REPO_TARBALL="https://github.com/chory-lab/transfer_station/archive/refs/heads/main.tar.gz"
-IMAGE_URL="${TS_IMAGE_URL:-https://downloads.raspberrypi.com/raspios_lite_arm64_latest}"
+IMAGE_URL="${TS_IMAGE_URL:-}"
+BUNDLE_URL="${TS_BUNDLE_URL:-https://github.com/chory-lab/transfer_station/releases/latest/download/offline-bundle.tar.gz}"
 CACHE="${TS_CACHE:-${SUDO_USER:+/home/$SUDO_USER}/.cache/transfer-station}"
 CACHE="${CACHE:-/tmp/transfer-station-cache}"
 
@@ -66,6 +67,33 @@ echo ">> fetching provisioning scripts"
 curl -fsSL "$REPO_TARBALL" | tar -xz -C "$WORK"
 SRC="$(find "$WORK" -maxdepth 1 -type d -name 'transfer_station-*' | head -1)"
 
+# --- offline dependency bundle -------------------------------------------
+# Fetched first: it pins the exact OS image its .debs were built against, so
+# it decides which image we write. Without a matching image the bundle is
+# useless, and the Pi would need a connected boot after all.
+BUNDLE_DIR="$CACHE/bundle"
+if [ ! -f "$BUNDLE_DIR/manifest.env" ]; then
+    echo ">> downloading the offline dependency bundle"
+    if curl -fsSL --retry 2 -o "$CACHE/bundle.tar.gz" "$BUNDLE_URL"; then
+        rm -rf "$BUNDLE_DIR"; mkdir -p "$BUNDLE_DIR"
+        tar -xzf "$CACHE/bundle.tar.gz" -C "$BUNDLE_DIR"
+    else
+        echo "   WARNING: no bundle available; the Pi will need one connected boot." >&2
+        rm -rf "$BUNDLE_DIR"
+    fi
+else
+    echo ">> using the cached offline bundle"
+fi
+
+if [ -f "$BUNDLE_DIR/manifest.env" ]; then
+    # shellcheck disable=SC1091
+    . "$BUNDLE_DIR/manifest.env"
+    echo "   bundle: ${BUNDLE_CODENAME:-?} (built ${BUNDLE_BUILT:-?})"
+    [ -n "$IMAGE_URL" ] || IMAGE_URL="${BUNDLE_IMAGE_URL:-}"
+fi
+# No bundle and no override: fall back to the current release.
+[ -n "$IMAGE_URL" ] || IMAGE_URL="https://downloads.raspberrypi.com/raspios_lite_arm64_latest"
+
 IMG="$CACHE/raspios.img"
 if [ ! -f "$IMG" ]; then
     echo ">> downloading Raspberry Pi OS Lite (about 500 MB, cached for next time)"
@@ -89,6 +117,7 @@ printf 'PI_PASSWORD_B64=%s
 mv "$CFG.new" "$CFG"
 echo
 echo ">> writing the image and provisioning (a few minutes)"
+if [ -f "$BUNDLE_DIR/manifest.env" ]; then export TS_BUNDLE="$BUNDLE_DIR"; fi
 echo "$DEV" | bash "$SRC/provisioning/flash.sh" --image "$IMG" --device "$DEV"
 
 # --- 5. verify what actually landed on the card ---------------------------
@@ -107,7 +136,13 @@ if [ "$VERIFY_RC" -ne 0 ]; then
 fi
 
 echo
-echo "Done. Put the card in the Pi and boot it ONCE plugged into a router"
-echo "with internet. It reboots twice by itself, then comes up at:"
+echo "Done."
+if [ -f "$BUNDLE_DIR/manifest.env" ]; then
+    echo "The card carries all its dependencies, so the Pi needs NO internet."
+    echo "Put it in the Pi and boot it. It reboots twice by itself, then:"
+else
+    echo "No offline bundle was available, so boot the Pi ONCE plugged into a"
+    echo "router with internet. It reboots twice by itself, then comes up at:"
+fi
 echo
 echo "    http://192.168.10.1:5000     ssh chorylab@192.168.10.1"

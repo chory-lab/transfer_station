@@ -106,6 +106,19 @@ if [ "$PHASE" = "preboot" ]; then
     [ "${PI_PASSWORD:-}" = "changeme" ] && note 'password is still the default "changeme"'
 
     echo
+    echo "Offline bundle"
+    if [ -f "$PAYLOAD/bundle/manifest.env" ]; then
+        # shellcheck disable=SC1091
+        . "$PAYLOAD/bundle/manifest.env"
+        check "bundle present ($(find "$PAYLOAD/bundle/debs" -name '*.deb' 2>/dev/null | wc -l) debs, $(find "$PAYLOAD/bundle/wheels" -name '*.whl' 2>/dev/null | wc -l) wheels)" 0
+        check "uv binary bundled" "$(has "$PAYLOAD/bundle/uv.tar.gz")"
+        info "built for ${BUNDLE_CODENAME:-?} on ${BUNDLE_BUILT:-?}"
+        info "the Pi will NOT need internet"
+    else
+        note "no offline bundle - the Pi will need one connected boot"
+    fi
+
+    echo
     echo "Repo archive"
     if LIST="$(tar -tzf "$PAYLOAD/repo.tar.gz" 2>/dev/null)"; then
         check "repo.tar.gz is a readable archive" 0

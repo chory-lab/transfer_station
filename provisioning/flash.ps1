@@ -23,7 +23,10 @@
 param(
     [string]$BootDrive,
     [string]$Image,
-    [string]$Device
+    [string]$Device,
+    # Directory holding an unpacked offline dependency bundle. When given it
+    # is staged on the card, and stage B installs with no network at all.
+    [string]$Bundle
 )
 
 $ErrorActionPreference = 'Stop'
@@ -173,6 +176,15 @@ foreach ($f in @('firstrun.sh', 'provision.sh', 'transfer-station.service')) {
 }
 $cfgText = [IO.File]::ReadAllText((Join-Path $Here 'config.env')) -replace "`r`n", "`n"
 [IO.File]::WriteAllText((Join-Path $payload 'config.env'), $cfgText, $utf8NoBom)
+
+# --- offline bundle -------------------------------------------------------
+if ($Bundle) {
+    if (-not (Test-Path -LiteralPath $Bundle)) { throw "Bundle not found: $Bundle" }
+    Write-Host '>> staging offline bundle'
+    $dest = Join-Path $payload 'bundle'
+    if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force $dest }
+    Copy-Item -Recurse -Force $Bundle $dest
+}
 
 # --- arm the first-boot hook ---------------------------------------------
 # Bookworm+ mounts the FAT partition at /boot/firmware; earlier releases /boot.

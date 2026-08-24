@@ -45,16 +45,17 @@ curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/pro
 
 <h3>Then</h3>
 
-The script asks which card to use and what password to set. When it finishes,
-put the card in the Pi and <b>boot it once plugged into a router with
-internet</b> &mdash; it installs its dependencies, reboots twice on its own,
-and comes up on the isolated link:
+The script asks which card to use and what password to set, and downloads
+everything the Pi needs onto the card &mdash; redis, the Python packages, all
+of it. When it finishes, put the card in the Pi and switch it on. <b>No
+internet needed on the Pi.</b> It reboots twice on its own, then comes up on
+the isolated link:
 
 ```
 http://192.168.10.1:5000        ssh chorylab@192.168.10.1
 ```
 
-Then move it to the switch. That is the whole procedure.
+That is the whole procedure.
 
 <blockquote>
 The Desktop and Full images work too, but Lite is preferred &mdash; a headless
