@@ -135,6 +135,11 @@ if [ "${TS_BUILD_BUNDLE:-0}" = "1" ]; then
         apt-get install -y --no-install-recommends curl ca-certificates >/dev/null
         bash /work/provisioning/build-bundle.sh /bundle
     '
+    # Pin the exact image this bundle matches. .debs are only valid for the
+    # release they came from, so the bootstraps must write this same image or
+    # the bundle is useless.
+    RESOLVED="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$IMAGE_URL")"
+    echo "BUNDLE_IMAGE_URL=${RESOLVED}" >> "$MNT/bundle/manifest.env"
     rm -rf /tmp/ts-bundle
     cp -r "$MNT/bundle" /tmp/ts-bundle
     echo ">> bundle copied to /tmp/ts-bundle"
