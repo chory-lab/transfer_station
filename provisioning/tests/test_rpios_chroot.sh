@@ -144,7 +144,7 @@ echo
 echo "############ deployment checks ############"
 chroot "$MNT" /bin/bash -c '
     set -e
-    export TS_ALLOW_DESTRUCTIVE=1
+    export TS_ALLOW_DESTRUCTIVE=1 TS_EMULATED=1
     bash /work/provisioning/tests/test_deploy.sh
 '
 

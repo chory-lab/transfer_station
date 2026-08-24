@@ -21,6 +21,13 @@ fail() {
 
 pass() { _green "  ok:   ${CURRENT_TEST}"; }
 
+# Visible non-failure, for checks that cannot run in this environment.
+skip() {
+    TESTS_RUN=$((TESTS_RUN - 1))
+    printf '[33m  SKIP: %s[0m
+' "${CURRENT_TEST}${1:+ -- $1}"
+}
+
 assert_eq() {
     if [ "$1" = "$2" ]; then pass; else
         fail "expected: [$2]
