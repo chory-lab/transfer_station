@@ -33,6 +33,32 @@ trap 'sync' EXIT
 
 echo "=== transfer-station provisioning $(date -u) ==="
 
+# --- offline bundle -------------------------------------------------------
+# If the card carries a dependency bundle, everything installs from it and
+# this boot needs no network at all. Otherwise fall back to the archives.
+BUNDLE=""
+for _b in /boot/firmware /boot; do
+    if [ -d "$_b/transfer-station/bundle" ]; then BUNDLE="$_b/transfer-station/bundle"; break; fi
+done
+if [ -n "$BUNDLE" ] && [ -f "$BUNDLE/manifest.env" ]; then
+    # shellcheck disable=SC1091
+    . "$BUNDLE/manifest.env"
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    if [ "${BUNDLE_CODENAME:-}" != "${VERSION_CODENAME:-}" ]; then
+        echo "WARNING: bundle was built for ${BUNDLE_CODENAME:-?} but this OS is"
+        echo "         ${VERSION_CODENAME:-?}. Ignoring it -- mixing releases would"
+        echo "         install a broken set. Falling back to the network."
+        BUNDLE=""
+    else
+        echo "using the offline bundle (${BUNDLE_CODENAME}, built ${BUNDLE_BUILT:-?})"
+    fi
+elif [ -n "$BUNDLE" ]; then
+    echo "WARNING: bundle directory has no manifest.env; ignoring it."
+    BUNDLE=""
+fi
+
+
 # CI mode: exercise the package/venv work inside an arm64 container, where
 # there is no init system, no NetworkManager and no reboot. Everything else
 # runs for real so dependency resolution is genuinely tested.
@@ -43,6 +69,8 @@ if [ "${TS_CI:-0}" = "1" ]; then
 fi
 
 # --- wait for real connectivity ------------------------------------------
+# Only needed when there is no bundle to install from.
+if [ -z "$BUNDLE" ]; then
 # network-online.target only means an interface came up, not that DNS works.
 for i in $(seq 1 30); do
     if getent hosts deb.debian.org >/dev/null 2>&1; then break; fi
@@ -50,25 +78,36 @@ for i in $(seq 1 30); do
     sleep 5
 done
 if ! getent hosts deb.debian.org >/dev/null 2>&1; then
-    echo "ERROR: no internet on this boot. Provisioning needs one connected boot." >&2
-    echo "Connect ${ETH_IFACE} to a router with internet and reboot." >&2
+    echo "ERROR: no internet on this boot, and no offline bundle on the card." >&2
+    echo "Connect ${ETH_IFACE} to a router with internet and reboot, or rebuild" >&2
+    echo "the card with a bundle so no network is needed." >&2
     exit 1
+fi
 fi
 
 # --- system packages ------------------------------------------------------
 export DEBIAN_FRONTEND=noninteractive
-apt-get update
 # python3-rpi.gpio is the prebuilt C extension; installing it via pip would
 # require a toolchain and frequently fails on current kernels.
-apt-get install -y --no-install-recommends \
-    redis-server python3-rpi.gpio python3-venv ca-certificates curl
+if [ -n "$BUNDLE" ]; then
+    # The bundle already holds the full dependency closure, so dpkg needs
+    # neither network nor solver: installing the whole set at once satisfies it.
+    dpkg -i "$BUNDLE"/debs/*.deb
+else
+    apt-get update
+    apt-get install -y --no-install-recommends         redis-server python3-rpi.gpio python3-venv ca-certificates curl
+fi
 
-systemctl enable redis-server
+systemctl enable redis-serversystemctl enable redis-server
 
 # --- uv -------------------------------------------------------------------
 if ! command -v uv >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh \
-        | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+    if [ -n "$BUNDLE" ]; then
+        tar -xzf "$BUNDLE/uv.tar.gz" -C /tmp
+        install -m 755 "$(find /tmp -name uv -type f | head -1)" /usr/local/bin/uv
+    else
+        curl -LsSf https://astral.sh/uv/install.sh             | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+    fi
 fi
 uv --version
 
@@ -78,7 +117,11 @@ uv --version
 # deps in requirements.txt.
 rm -rf "${REPO_DEST}/.venv"
 uv venv --python /usr/bin/python3 --system-site-packages "${REPO_DEST}/.venv"
-uv pip install --python "${REPO_DEST}/.venv/bin/python" -r "${REPO_DEST}/requirements.txt"
+if [ -n "$BUNDLE" ]; then
+    uv pip install --python "${REPO_DEST}/.venv/bin/python"         --no-index --find-links "$BUNDLE/wheels" -r "${REPO_DEST}/requirements.txt"
+else
+    uv pip install --python "${REPO_DEST}/.venv/bin/python" -r "${REPO_DEST}/requirements.txt"
+fi
 # RPi.GPIO is checked by spec rather than import: importing it on non-Pi
 # hardware (i.e. in CI) raises, but presence on sys.path is what we need.
 "${REPO_DEST}/.venv/bin/python" - <<'PYCHECK'

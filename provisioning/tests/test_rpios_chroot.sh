@@ -124,6 +124,23 @@ fi
 mkdir -p "$MNT/work"
 cp -a "$REPO_ROOT/." "$MNT/work/"
 
+# --- optional: build the offline dependency bundle -----------------------
+# apt's own solver runs here, against the real archive, for the real release.
+# That is the whole reason this lives in the chroot rather than on the host.
+if [ "${TS_BUILD_BUNDLE:-0}" = "1" ]; then
+    echo
+    echo "############ building the offline bundle ############"
+    chroot "$MNT" /bin/bash -c '
+        set -e
+        apt-get install -y --no-install-recommends curl ca-certificates >/dev/null
+        bash /work/provisioning/build-bundle.sh /bundle
+    '
+    rm -rf /tmp/ts-bundle
+    cp -r "$MNT/bundle" /tmp/ts-bundle
+    echo ">> bundle copied to /tmp/ts-bundle"
+    exit 0
+fi
+
 echo
 echo "############ stage A: firstrun.sh on real Raspberry Pi OS ############"
 chroot "$MNT" /bin/bash -c '

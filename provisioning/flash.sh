@@ -106,6 +106,15 @@ sudo cp "$TARDIR/config.env" "$PAYLOAD/config.env"
 # FAT has no exec bit of its own; the Pi mounts vfat 0755 so this is advisory.
 sudo chmod 755 "$PAYLOAD/firstrun.sh" "$PAYLOAD/provision.sh" 2>/dev/null || true
 
+# --- offline bundle -------------------------------------------------------
+# If a dependency bundle has been fetched, stage it so stage B needs no
+# network at all. Optional: without it the connected-boot path still works.
+if [ -n "${TS_BUNDLE:-}" ] && [ -d "$TS_BUNDLE" ]; then
+    echo "staging offline bundle from $TS_BUNDLE"
+    sudo rm -rf "$PAYLOAD/bundle"
+    sudo cp -r "$TS_BUNDLE" "$PAYLOAD/bundle"
+fi
+
 # --- arm the first-boot hook ---------------------------------------------
 # Bookworm+ mounts the FAT partition at /boot/firmware; earlier at /boot.
 # pi-gen's real issue.txt names no codename -- it is only
