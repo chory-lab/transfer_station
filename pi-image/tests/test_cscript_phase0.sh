@@ -46,8 +46,10 @@ printf '[connection]\nid=%s-isolated\n' "$ETH_IFACE" > "$BUILD/eth0-isolated.nmc
 printf '[Unit]\nDescription=%s\n' "$APP_NAME" > "$BUILD/${APP_NAME}.service"
 
 # --- a fake mounted image -------------------------------------------------
+# Only directories a real Raspberry Pi OS image actually ships, so the test
+# cannot pass by handing phase 0 something the Pi will not have.
 SDMPT="$TMP/img"
-mkdir -p "$SDMPT/etc" "$SDMPT/usr/local/sdm"
+mkdir -p "$SDMPT/etc/systemd/system" "$SDMPT/usr/local/sdm" "$SDMPT/home"
 
 # --- sdm copies the cscript into the image and runs it from there ---------
 install -m 755 "$PI_IMAGE_DIR/cscript.sh" "$SDMPT/usr/local/sdm/cscript.sh"

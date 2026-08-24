@@ -49,6 +49,7 @@ case "$phase" in
     install -m 600 "$PI_IMAGE_BUILD/eth0-isolated.nmconnection" \
         "$SDMPT/etc/NetworkManager/system-connections/${ETH_IFACE}-isolated.nmconnection"
 
+    install -d -m 755 "$SDMPT/etc/systemd/system"
     install -m 644 "$PI_IMAGE_BUILD/${APP_NAME}.service" \
         "$SDMPT/etc/systemd/system/${APP_NAME}.service"
     ;;
