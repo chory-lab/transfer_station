@@ -30,9 +30,9 @@ check() {  # check <name> <0|1>
 note() { WARN=$((WARN+1)); _y "  note  $1"; }
 info() { _d "  info  $1"; }
 has()  { [ -f "$1" ] && echo 0 || echo 1; }
-# CR detection via awk: $'' does not survive argument passing to grep on
-# some platforms (git-bash), where it degenerates to an empty pattern that
-# matches every line and reports false positives.
+# CR detection via awk: a backslash-r escape does not reliably survive
+# argument passing to grep (on git-bash it degenerates to an empty pattern
+# that matches every line, reporting false positives on clean files).
 has_cr() { awk 'BEGIN{cr=sprintf("%c",13)} index($0,cr){f=1} END{exit !f}' "$1"; }
 
 grep_q() { grep -q "$2" "$1" 2>/dev/null && echo 0 || echo 1; }

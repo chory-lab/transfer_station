@@ -73,6 +73,24 @@ done < <(git ls-files)
 it "no C0 control characters in tracked text files"
 if [ "$FOUND" -eq 0 ]; then pass; else fail "see the files listed above"; fi
 
+# CR is excluded above because CRLF files are legitimate -- but never in a
+# file .gitattributes pins to eol=lf. A lone CR in a shell script is exactly
+# how a mangled carriage-return escape hides, and shellcheck rejects it (SC1017).
+echo
+echo "== no carriage returns in LF-pinned shell scripts =="
+CR_FOUND=0
+while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    if LC_ALL=C awk 'BEGIN{cr=sprintf("%c",13)} index($0,cr){f=1} END{exit !f}' "$f"; then
+        echo "  offending file: $f"
+        LC_ALL=C awk 'BEGIN{cr=sprintf("%c",13)} index($0,cr){print "      line "NR}' "$f" | head -3
+        CR_FOUND=1
+    fi
+done < <(git ls-files '*.sh')
+
+it "no CR in any tracked .sh file"
+if [ "$CR_FOUND" -eq 0 ]; then pass; else fail "see above"; fi
+
 echo
 echo "== the README's copy-paste commands are intact =="
 # Users paste these verbatim; a mangled path is a silent failure for them.
