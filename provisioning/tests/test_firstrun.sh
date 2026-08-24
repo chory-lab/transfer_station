@@ -58,6 +58,12 @@ PAYLOAD="$BOOTDIR/transfer-station"
 # shellcheck disable=SC1091
 . "$PAYLOAD/config.env"
 
+# Simulate a bootstrap-built card: the password arrives base64-encoded.
+B64_SENTINEL="$(printf '%s' 'sekritpassword' | base64 | tr -d '
+')"
+printf 'PI_PASSWORD_B64=%s
+' "$B64_SENTINEL" >> "$PAYLOAD/config.env"
+
 echo "== running stage A =="
 bash "$PAYLOAD/firstrun.sh" >/tmp/firstrun.out 2>&1
 RC=$?
@@ -155,7 +161,12 @@ assert_no_file "$PAYLOAD/repo.tar.gz"
 it "removes the userconf.txt fallback once stage A has succeeded"
 assert_no_file "$BOOTDIR/userconf.txt"
 
-it "redacts the password left on the FAT partition"
+it "redacts the plaintext password left on the FAT partition"
 assert_not_contains "$(cat "$PAYLOAD/config.env")" "PI_PASSWORD=changeme"
+
+# bootstrap writes PI_PASSWORD_B64, so that is the line that matters in
+# practice -- and it was the one the redaction used to miss entirely.
+it "redacts the base64 password bootstrap actually writes"
+assert_not_contains "$(cat "$PAYLOAD/config.env")" "$B64_SENTINEL"
 
 summary

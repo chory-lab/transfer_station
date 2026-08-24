@@ -76,7 +76,11 @@ install -m 644 "$PAYLOAD/transfer-station.service" /usr/local/share/transfer-sta
 cat > /etc/systemd/system/transfer-station-provision.service <<'UNIT'
 [Unit]
 Description=Transfer Station one-shot provisioning (needs internet)
-After=network-online.target
+# cloud-final.service is only present on cloud-init images (Raspberry Pi
+# Imager writes user-data on current releases); ordering after a unit that
+# does not exist is a no-op. Where it does exist this keeps us off cloud-init's
+# apt lock and lets it finish its own account/network setup before we run.
+After=network-online.target cloud-final.service
 Wants=network-online.target
 ConditionPathExists=/usr/local/sbin/transfer-station-provision
 
@@ -101,7 +105,10 @@ sed -i 's| systemd\.run=[^ ]*||g; s| systemd\.run_success_action=[^ ]*||g; s| sy
 rm -f "$PAYLOAD/firstrun.sh" "$PAYLOAD/repo.tar.gz"
 # Stage A worked, so the pre-hashed recovery login is no longer needed.
 rm -f "$BOOTDIR/userconf.txt"
-sed -i 's/^PI_PASSWORD=.*/PI_PASSWORD=<redacted>/' "$PAYLOAD/config.env"
+# Both forms: bootstrap writes PI_PASSWORD_B64, a hand-edited config.env
+# writes PI_PASSWORD. Base64 is encoding, not encryption, so the encoded one
+# must be scrubbed just as thoroughly.
+sed -i 's/^PI_PASSWORD=.*/PI_PASSWORD=<redacted>/; s/^PI_PASSWORD_B64=.*/PI_PASSWORD_B64=<redacted>/'     "$PAYLOAD/config.env"
 
 echo "=== stage A complete, rebooting into stage B ==="
 sync

@@ -59,6 +59,10 @@ Then move it to the switch. That is the whole procedure.
 <blockquote>
 The Desktop and Full images work too, but Lite is preferred &mdash; a headless
 motor controller has no use for a GUI. <b>64-bit is what matters.</b>
+If Windows gives the card's <code>bootfs</code> partition no drive letter
+(Disk Management shows the label but the letter column is blank), the script
+assigns one for you &mdash; but only when PowerShell was started with
+<b>Run as administrator</b>. Otherwise assign the letter by hand first.
 Needs a Pi with an ethernet port &mdash; a Pi 4 Model B is the target. The Pi
 Zero 2 W in the parts list below is Wi-Fi only and cannot do this.
 Logs land on the card itself (<code>transfer-station/*.log</code> on the boot

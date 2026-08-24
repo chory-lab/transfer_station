@@ -108,10 +108,23 @@ sudo chmod 755 "$PAYLOAD/firstrun.sh" "$PAYLOAD/provision.sh" 2>/dev/null || tru
 
 # --- arm the first-boot hook ---------------------------------------------
 # Bookworm+ mounts the FAT partition at /boot/firmware; earlier at /boot.
+# pi-gen's real issue.txt names no codename -- it is only
+#   Raspberry Pi reference <YYYY-MM-DD>
+#   Generated using pi-gen, <url>, <sha>, stage<N>
+# -- so the build date is the signal that actually exists. Bookworm was
+# released 2023-10-10; the codename match stays as a belt-and-braces override.
 RELEASE="$(cat "$BOOT/issue.txt" 2>/dev/null || true)"
+# grep exits 1 when issue.txt is missing or dateless; set -e must not care.
+BUILT="$(printf '%s' "$RELEASE" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 | tr -d '-' || true)"
 case "$RELEASE" in
-    *bookworm*|*trixie*|*forky*) RUNPATH=/boot/firmware/transfer-station/firstrun.sh ;;
-    *)                           RUNPATH=/boot/transfer-station/firstrun.sh ;;
+    *bookworm*|*trixie*|*forky*)
+        RUNPATH=/boot/firmware/transfer-station/firstrun.sh ;;
+    *)
+        if [ -n "$BUILT" ] && [ "$BUILT" -ge 20231010 ]; then
+            RUNPATH=/boot/firmware/transfer-station/firstrun.sh
+        else
+            RUNPATH=/boot/transfer-station/firstrun.sh
+        fi ;;
 esac
 
 CMDLINE="$(tr -d '\n' < "$BOOT/cmdline.txt")"
