@@ -1,0 +1,129 @@
+name: pi-image
+
+on:
+  push:
+    branches: [main, sdm-image-builder]
+    paths:
+      - 'pi-image/**'
+      - 'requirements.txt'
+      - '*.py'
+      - 'templates/**'
+      - '.github/workflows/pi-image.yml'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the image as a release asset'
+        type: boolean
+        default: false
+
+jobs:
+  lint:
+    name: manifest and scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shell syntax
+        run: bash -n pi-image/build.sh pi-image/cscript.sh
+
+      - name: shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck -S warning -e SC1090,SC1091 pi-image/build.sh pi-image/cscript.sh
+
+      # The manifest is sourced by bash; an unquoted value with a space in it
+      # tries to execute. That bug shipped once already.
+      - name: manifest sources cleanly and expands
+        run: |
+          set -e
+          . pi-image/pi-app.env
+          VENV="$REPO_DEST/.venv"
+          E="${APP_EXEC//\$\{VENV\}/$VENV}"
+          E="${E//\$\{SERVER_PORT\}/$SERVER_PORT}"
+          echo "ExecStart = $E"
+          case "$E" in
+            *'${'*) echo "unsubstituted placeholder remains in APP_EXEC" >&2; exit 1 ;;
+          esac
+          test -n "$APP_NAME" && test -n "$PI_USER" && test -n "$ETH_ADDRESS"
+
+      - name: the rendered unit is valid
+        run: |
+          . pi-image/pi-app.env
+          VENV="$REPO_DEST/.venv"
+          E="${APP_EXEC//\$\{VENV\}/$VENV}"
+          E="${E//\$\{SERVER_PORT\}/$SERVER_PORT}"
+          cat > /tmp/u.service <<UNIT
+          [Unit]
+          Description=$APP_NAME
+          After=network.target $SERVICE_REQUIRES
+          Requires=$SERVICE_REQUIRES
+          [Service]
+          ExecStart=$E
+          User=$PI_USER
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          systemd-analyze verify /tmp/u.service 2>&1 | tee /tmp/v.log
+          ! grep -qiE 'invalid|failed to parse|unknown lvalue' /tmp/v.log
+
+  build:
+    name: build the image
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: lint
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: free up disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: cache the base image
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pi-image-cache/raspios.img.xz
+          key: raspios-lite-arm64-${{ github.run_id }}
+          restore-keys: raspios-lite-arm64-
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: host tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static systemd-container xz-utils \
+                                  parted e2fsprogs curl
+
+      # PI_PASSWORD comes from a repository secret so it never lands in the
+      # manifest, the logs, or git history. Without one the build still works
+      # and warns, producing an image with the default password.
+      - name: build
+        env:
+          PI_PASSWORD: ${{ secrets.PI_PASSWORD }}
+        run: sudo -E bash pi-image/build.sh /tmp/transfer-station.img.xz
+
+      - name: image summary
+        run: |
+          ls -lh /tmp/transfer-station.img.xz
+          echo "sha256: $(sha256sum /tmp/transfer-station.img.xz | cut -d' ' -f1)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pi-image
+          path: /tmp/transfer-station.img.xz
+          retention-days: 14
+
+      - name: publish
+        if: github.ref == 'refs/heads/main' || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="pi-image"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" /tmp/transfer-station.img.xz \
+              --title "Ready-to-flash Pi image" \
+              --notes "Flash with Raspberry Pi Imager, no customisation. The Pi needs no network."
