@@ -33,14 +33,26 @@ echo "raspberrypi" > /etc/hostname
 printf '127.0.0.1\tlocalhost\n127.0.1.1\traspberrypi\n' > /etc/hosts
 
 # --- build the boot partition exactly as flash.sh leaves it ---------------
-BOOTDIR=/boot/firmware
+BOOTDIR="${TS_BOOTDIR:-/boot/firmware}"
 mkdir -p "$BOOTDIR"
-"$HERE/make-fake-boot.sh" "$BOOTDIR" bookworm
+# TS_KEEP_BOOT=1 means we are running against a real Raspberry Pi OS boot
+# partition, so keep its genuine cmdline.txt/issue.txt instead of synthesising.
+if [ "${TS_KEEP_BOOT:-0}" != "1" ]; then
+    "$HERE/make-fake-boot.sh" "$BOOTDIR" bookworm
+fi
+
+cp "$BOOTDIR/cmdline.txt" "$BOOTDIR/cmdline.txt.orig"
 
 SHIM_SUDO="$(mktemp -d)"
 printf '#!/bin/sh\nexec "$@"\n' > "$SHIM_SUDO/sudo"; chmod +x "$SHIM_SUDO/sudo"
 PATH="$SHIM_SUDO:$PATH" bash "$PROV/flash.sh" --boot "$BOOTDIR" >/tmp/flash.log 2>&1 \
     || { cat /tmp/flash.log; exit 1; }
+
+# Remember what cmdline.txt looked like before flash.sh touched it, so the
+# "original parameters preserved" assertion works against any image.
+CMDLINE_BEFORE="$(tr -d '
+' < "$BOOTDIR/cmdline.txt.orig" 2>/dev/null                   || tr -d '
+' < "$BOOTDIR/cmdline.txt")"
 
 PAYLOAD="$BOOTDIR/transfer-station"
 # shellcheck disable=SC1091
@@ -127,8 +139,9 @@ assert_not_contains "$(cat "$BOOTDIR/cmdline.txt")" "systemd.run="
 it "strips systemd.unit from cmdline.txt"
 assert_not_contains "$(cat "$BOOTDIR/cmdline.txt")" "systemd.unit="
 
-it "leaves the original kernel parameters intact"
-assert_contains "$(cat "$BOOTDIR/cmdline.txt")" "root=PARTUUID=1a2b3c4d-02"
+it "restores cmdline.txt to exactly its pre-flash contents"
+assert_eq "$(tr -d '
+' < "$BOOTDIR/cmdline.txt")" "$CMDLINE_BEFORE"
 
 it "cmdline.txt is still a single line"
 assert_eq "$(wc -l < "$BOOTDIR/cmdline.txt" | tr -d ' ')" "1"

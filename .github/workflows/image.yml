@@ -70,41 +70,37 @@ jobs:
         shell: pwsh
         run: ./provisioning/tests/test_flash_ps1.ps1
 
-  pipeline-arm64:
-    name: full provisioning + deployment (arm64)
+  pipeline-rpios:
+    name: provisioning on real Raspberry Pi OS (chroot)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
-      - name: enable arm64 emulation
+      - name: free up disk (the image needs ~7G)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: cache the Raspberry Pi OS download
+        uses: actions/cache@v4
+        with:
+          path: /tmp/rpios-cache/raspios.img.xz
+          key: rpios-lite-arm64-${{ github.run_id }}
+          restore-keys: rpios-lite-arm64-
+
+      - name: register aarch64 binfmt emulation
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
 
-      # Debian arm64, NOT Raspberry Pi OS: no archive.raspberrypi.com sources,
-      # so package versions differ from the device. This validates the logic
-      # and dependency resolution, not device fidelity.
-      - name: stage A -> stage B -> deployment, on one filesystem
+      - name: install host tooling
         run: |
-          docker run --rm --platform linux/arm64 \
-            -v "$PWD:/src:ro" \
-            balenalib/raspberrypi3-64-debian:bookworm \
-            bash -euo pipefail -c '
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update
-              apt-get install -y --no-install-recommends \
-                  sudo adduser passwd ca-certificates curl xz-utils \
-                  procps iproute2 sudo
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static xz-utils fdisk e2fsprogs
 
-              cp -r /src /work && chmod -R u+w /work
-
-              echo "########## stage A: firstrun.sh ##########"
-              TS_ALLOW_DESTRUCTIVE=1 bash /work/provisioning/tests/test_firstrun.sh
-
-              echo "########## stage B: provision.sh ##########"
-              TS_CI=1 bash /usr/local/sbin/transfer-station-provision
-
-              echo "########## deployment ##########"
-              TS_ALLOW_DESTRUCTIVE=1 bash /work/provisioning/tests/test_deploy.sh
-            '
+      # Runs stage A, stage B and the deployment checks inside the official
+      # Raspberry Pi OS Lite arm64 rootfs, against archive.raspberrypi.com.
+      # Nothing boots here -- see provisioning/README.md for the gaps.
+      - name: stage A -> stage B -> deployment, on genuine Raspberry Pi OS
+        run: sudo TS_INPLACE=1 bash provisioning/tests/test_rpios_chroot.sh

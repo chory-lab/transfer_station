@@ -115,6 +115,7 @@ pwsh provisioning/tests/test_flash_ps1.ps1 # Windows flasher
 | `test_flash_image.sh` | Linux + root | real MBR/FAT32 image written to a loopback "SD card" via `dd`, partition discovery, mount, on-card contents |
 | `test_flash_ps1.ps1` | Windows | same properties as the bash injector, plus **byte-for-byte parity** of the generated `cmdline.txt` |
 | `test_firstrun.sh` | container | stage A executed for real: account, groups, sudoers, hostname, repo extraction, stage B arming, self-disarm, password redaction |
+| `test_rpios_chroot.sh` | Linux + root | the whole chain inside the **official Raspberry Pi OS rootfs** under qemu-user: real `archive.raspberrypi.com`, real package versions, real filesystem layout. Also asserts the image's own `/etc/fstab` really does mount the FAT partition at `/boot/firmware` |
 | `test_deploy.sh` | container | generated unit, isolated network profile (asserts **no** `gateway=`/`dns=`), and the Flask server answering HTTP using the unit's real `ExecStart` |
 
 The destructive suites create users and rewrite `/etc`, so they refuse to run
