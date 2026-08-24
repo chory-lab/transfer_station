@@ -68,7 +68,32 @@ fi
 # runs for real so dependency resolution is genuinely tested.
 if [ "${TS_CI:-0}" = "1" ]; then
     echo "*** TS_CI=1: systemctl and reboot are stubbed ***"
-    systemctl() { echo "[ci] systemctl $*"; return 0; }
+    # A stub that succeeds for ANY arguments is how a fused command line --
+    # `systemctl enable redis-serversystemctl enable redis-server` -- passed
+    # CI and then killed stage B on real hardware. Real systemd rejects a
+    # unit it does not know, so the stub has to as well, or the test is only
+    # confirming that the script runs, not that it says anything sensible.
+    systemctl() {
+        local _a
+        for _a in "$@"; do
+            case "$_a" in
+                enable|disable|start|stop|restart|daemon-reload|reboot|is-active|--quiet|--now)
+                    ;;
+                redis-server|redis-server.service|ssh|ssh.service|NetworkManager|NetworkManager.service)
+                    ;;
+                transfer-station.service|transfer-station-provision.service)
+                    ;;
+                *)
+                    echo "[ci] systemctl: unknown unit or verb '$_a'" >&2
+                    return 1
+                    ;;
+            esac
+        done
+        echo "[ci] systemctl $*"
+        # Nothing is actually running inside the chroot.
+        [ "${1:-}" = "is-active" ] && return 1
+        return 0
+    }
     mkdir -p /etc/NetworkManager/system-connections
 fi
 
@@ -102,7 +127,14 @@ else
     apt-get install -y --no-install-recommends         redis-server python3-rpi.gpio python3-venv ca-certificates curl
 fi
 
-systemctl enable redis-serversystemctl enable redis-server
+# Two lines fused into one here once, producing
+#   systemctl enable redis-serversystemctl enable redis-server
+# which asks systemd for a unit that does not exist. Under `set -e` that
+# killed stage B on this line -- after dpkg, but before the venv, the
+# server unit and the static address. The Pi booted fine and was simply
+# not on the network. CI missed it because TS_CI stubs systemctl to
+# return 0 for any arguments at all.
+systemctl enable redis-server
 
 # --- uv -------------------------------------------------------------------
 if ! command -v uv >/dev/null 2>&1; then

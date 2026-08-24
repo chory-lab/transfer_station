@@ -41,6 +41,11 @@ jobs:
       - name: no stray control characters in tracked files
         run: bash provisioning/tests/test_no_control_chars.sh
 
+      # Fused command lines are valid bash and pass shellcheck. One of them
+      # killed stage B on hardware while CI stayed green.
+      - name: systemctl calls name units we actually ship
+        run: bash provisioning/tests/test_systemctl_calls.sh
+
       - name: config.env is parseable by both shells
         run: |
           bash -c '. provisioning/config.env; echo "$ETH_ADDRESS:$SERVER_PORT"'
