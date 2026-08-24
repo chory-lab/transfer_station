@@ -19,7 +19,7 @@ REPO_ROOT="$(cd "$HERE/../.." && pwd)"
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
 
-cd "$REPO_ROOT"
+cd "$REPO_ROOT" || exit 1
 
 echo "== no stray control characters in tracked text files =="
 
