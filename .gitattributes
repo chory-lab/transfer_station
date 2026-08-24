@@ -5,6 +5,11 @@
 provisioning/payload/*     text eol=lf
 provisioning/config.env    text eol=lf
 requirements.txt           text eol=lf
+requirements.in            text eol=lf
+# pi-app.env is sourced by bash on the build host; a trailing CR would end up
+# inside IMAGE_SHA256 and TIMEZONE and fail in ways that look like anything
+# but a line ending.
+pi-image/*                 text eol=lf
 
 # PowerShell stays native to Windows.
 *.ps1                      text eol=crlf

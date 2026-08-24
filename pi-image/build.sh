@@ -38,11 +38,25 @@ fi
 # A maintained tool that already solves image customisation: user creation,
 # the first-boot account wizard, cloud-init, machine-id, root expansion. All
 # things worth not reimplementing.
+# Pinned two ways: the installer is fetched by commit rather than from master,
+# and it is asked for a specific release tag. Pinning only one of those leaves
+# the other floating, which is how the user plugin renamed username= to
+# adduser= underneath a build that had supposedly pinned sdm.
 if ! command -v sdm >/dev/null 2>&1; then
-    echo ">> installing sdm"
-    curl -fsSL https://raw.githubusercontent.com/gitbls/sdm/master/install-sdm | bash
+    echo ">> installing sdm ${SDM_VERSION}"
+    SDM_INSTALLER="https://raw.githubusercontent.com/gitbls/sdm/${SDM_COMMIT}/install-sdm"
+    curl -fsSL "$SDM_INSTALLER" | bash -s -- "$SDM_VERSION"
 fi
-sdm --version || true
+
+# Assert what we actually got. A pin that is never checked is a comment.
+SDM_GOT="$(sdm --version 2>&1 || true)"
+echo ">> $SDM_GOT"
+case "$SDM_GOT" in
+    *"$SDM_VERSION"*) ;;
+    *) echo "ERROR: expected sdm $SDM_VERSION, got: $SDM_GOT" >&2
+       echo "       Remove the installed sdm, or move the pin in pi-app.env." >&2
+       exit 1 ;;
+esac
 
 # --- the base image -------------------------------------------------------
 mkdir -p "$CACHE"
@@ -53,6 +67,22 @@ if [ ! -f "$IMG" ]; then
         curl -fSL --retry 3 -o "$CACHE/raspios.img.xz.part" "$IMAGE_URL"
         mv "$CACHE/raspios.img.xz.part" "$CACHE/raspios.img.xz"
     fi
+    # Verify before decompressing, and on every run -- CI restores this cache
+    # by key prefix, so a stale or truncated entry would otherwise be
+    # customised and shipped with nobody the wiser.
+    if [ -n "${IMAGE_SHA256:-}" ]; then
+        echo ">> verifying the base image checksum"
+        if ! echo "${IMAGE_SHA256}  ${CACHE}/raspios.img.xz" | sha256sum -c -; then
+            echo "ERROR: the base image does not match IMAGE_SHA256." >&2
+            echo "       Delete ${CACHE}/raspios.img.xz and retry. If it still" >&2
+            echo "       differs, IMAGE_URL was re-published and the pin needs a" >&2
+            echo "       deliberate update." >&2
+            exit 1
+        fi
+    else
+        echo "WARNING: IMAGE_SHA256 is unset; the base image is unverified." >&2
+    fi
+
     echo ">> decompressing"
     xz -dc "$CACHE/raspios.img.xz" > "$IMG.part" && mv "$IMG.part" "$IMG"
 fi
