@@ -14,9 +14,11 @@ configured for that segment.
 
 <h3>Windows</h3>
 
-Flash <b>Raspberry Pi OS Lite (64-bit)</b> with
-<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a>
-(no customisation needed). Leave the card inserted, then paste into PowerShell:
+Flash the card with
+<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a>, no
+customisation needed. In Imager, pick <b>Choose OS &rarr; Raspberry Pi OS
+(other) &rarr; Raspberry Pi OS Lite (64-bit)</b>. Leave the card inserted,
+then paste into PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 | iex
@@ -24,7 +26,8 @@ irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioni
 
 <h3>Linux / macOS</h3>
 
-Insert a blank card and paste into a terminal:
+Insert a blank card and paste into a terminal (the script downloads
+Raspberry Pi OS Lite 64-bit for you):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.sh | sudo bash
@@ -44,6 +47,8 @@ http://192.168.10.1:5000        ssh chorylab@192.168.10.1
 Then move it to the switch. That is the whole procedure.
 
 <blockquote>
+The Desktop and Full images work too, but Lite is preferred &mdash; a headless
+motor controller has no use for a GUI. <b>64-bit is what matters.</b>
 Needs a Pi with an ethernet port &mdash; a Pi 4 Model B is the target. The Pi
 Zero 2 W in the parts list below is Wi-Fi only and cannot do this.
 Logs land on the card itself (<code>transfer-station/*.log</code> on the boot
