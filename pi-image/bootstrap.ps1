@@ -24,14 +24,48 @@ function Test-IsAdmin {
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+# Imager moves. v1 installed to 'Raspberry Pi Imager', v2 to
+# 'Raspberry Pi Ltd\Imager', and a per-user install lands somewhere else
+# again -- so hardcoded paths go stale and the script claims Imager is not
+# installed when it plainly is. Ask Windows where it is before guessing:
+# App Paths and the uninstall entry are both written by the installer and
+# survive the vendor renaming its directory.
 function Find-Imager {
     $cmd = Get-Command rpi-imager -ErrorAction SilentlyContinue
     if ($cmd) { return $cmd.Source }
-    $paths = @((Join-Path $env:ProgramFiles 'Raspberry Pi Imager\rpi-imager.exe'))
-    if (${env:ProgramFiles(x86)}) {
-        $paths += Join-Path ${env:ProgramFiles(x86)} 'Raspberry Pi Imager\rpi-imager.exe'
+
+    $appPaths = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\rpi-imager.exe',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\rpi-imager.exe'
+    )
+    foreach ($key in $appPaths) {
+        $entry = (Get-ItemProperty -LiteralPath $key -ErrorAction SilentlyContinue).'(default)'
+        if ($entry -and (Test-Path -LiteralPath $entry)) { return $entry }
     }
-    foreach ($path in $paths) { if (Test-Path -LiteralPath $path) { return $path } }
+
+    $uninstall = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    foreach ($key in $uninstall) {
+        foreach ($app in (Get-ItemProperty $key -ErrorAction SilentlyContinue |
+                          Where-Object { $_.DisplayName -like '*Raspberry Pi Imager*' })) {
+            if (-not $app.InstallLocation) { continue }
+            $exe = Join-Path $app.InstallLocation 'rpi-imager.exe'
+            if (Test-Path -LiteralPath $exe) { return $exe }
+        }
+    }
+
+    # Last resort: the layouts we have actually seen, newest first.
+    $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, "$env:LOCALAPPDATA\Programs") |
+             Where-Object { $_ }
+    foreach ($root in $roots) {
+        foreach ($leaf in @('Raspberry Pi Ltd\Imager', 'Raspberry Pi Imager')) {
+            $exe = Join-Path $root (Join-Path $leaf 'rpi-imager.exe')
+            if (Test-Path -LiteralPath $exe) { return $exe }
+        }
+    }
     return $null
 }
 
