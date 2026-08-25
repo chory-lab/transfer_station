@@ -89,16 +89,48 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 # python3-rpi.gpio is the prebuilt C extension; installing it via pip would
 # require a toolchain and frequently fails on current kernels.
-if [ -n "$BUNDLE" ]; then
-    # The bundle already holds the full dependency closure, so dpkg needs
-    # neither network nor solver: installing the whole set at once satisfies it.
-    dpkg -i "$BUNDLE"/debs/*.deb
+# Current Raspberry Pi OS ships python3-rpi-lgpio: a shim offering the
+# RPi.GPIO API on top of lgpio, because the original does not work on a Pi 5.
+# It Conflicts with python3-rpi.gpio, so asking for both is never satisfiable.
+# The shim provides the module we need, so where it is already installed we
+# leave it alone. This matters most on the Desktop and Full images, which ship
+# it -- the bundle is resolved against Lite, where it is absent.
+if dpkg -s python3-rpi-lgpio >/dev/null 2>&1; then
+    HAVE_LGPIO=1
+    echo "python3-rpi-lgpio is installed; it provides RPi.GPIO"
 else
-    apt-get update
-    apt-get install -y --no-install-recommends         redis-server python3-rpi.gpio python3-venv ca-certificates curl
+    HAVE_LGPIO=0
 fi
 
-systemctl enable redis-serversystemctl enable redis-server
+if [ -n "$BUNDLE" ]; then
+    # The bundle already holds the full dependency closure, so dpkg needs
+    # neither network nor solver: installing the whole set at once satisfies
+    # it. dpkg -i does NOT resolve conflicts, though, so a conflicting deb has
+    # to be dropped from the set rather than left for dpkg to choke on.
+    DEBS=""
+    for _deb in "$BUNDLE"/debs/*.deb; do
+        case "${_deb##*/}" in
+            python3-rpi.gpio_*)
+                if [ "$HAVE_LGPIO" = 1 ]; then
+                    echo "skipping ${_deb##*/} (conflicts with python3-rpi-lgpio)"
+                    continue
+                fi ;;
+        esac
+        DEBS="$DEBS $_deb"
+    done
+    # shellcheck disable=SC2086  # deliberate word splitting: one deb per arg
+    dpkg -i $DEBS
+else
+    apt-get update
+    PKGS="redis-server python3-venv ca-certificates curl"
+    # python3-rpi.gpio is the prebuilt C extension; installing it via pip would
+    # require a toolchain and frequently fails on current kernels.
+    [ "$HAVE_LGPIO" = 1 ] || PKGS="$PKGS python3-rpi.gpio"
+    # shellcheck disable=SC2086  # deliberate word splitting: one package per arg
+    apt-get install -y --no-install-recommends $PKGS
+fi
+
+systemctl enable redis-server
 
 # --- uv -------------------------------------------------------------------
 if ! command -v uv >/dev/null 2>&1; then

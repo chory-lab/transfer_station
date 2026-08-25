@@ -92,6 +92,32 @@ it "no CR in any tracked .sh file"
 if [ "$CR_FOUND" -eq 0 ]; then pass; else fail "see above"; fi
 
 echo
+echo "== no line is a command doubled onto itself =="
+# a4cdcbb shipped this in provision.sh:
+#     systemctl enable redis-serversystemctl enable redis-server
+# A newline was lost between two copies of the same command. It is valid bash,
+# so bash -n, shellcheck and every suite passed it -- and stage B died on the
+# real device trying to enable a unit called "redis-serversystemctl". Catch the
+# shape: a whole line that is one string written twice, back to back.
+DUP_FOUND=0
+while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    while IFS= read -r report; do
+        echo "  offending line: $f:$report"
+        DUP_FOUND=1
+    done < <(awk '
+        { line = $0
+          sub(/^[ 	]+/, "", line); sub(/[ 	]+$/, "", line)
+          if (line ~ /^#/ || length(line) < 16 || length(line) % 2 != 0) next
+          h = length(line) / 2
+          if (substr(line, 1, h) == substr(line, h + 1)) print NR": "substr(line, 1, 60)
+        }' "$f")
+done < <(git ls-files '*.sh')
+
+it "no tracked .sh line is the same command twice"
+if [ "$DUP_FOUND" -eq 0 ]; then pass; else fail "see above"; fi
+
+echo
 echo "== the README's copy-paste commands are intact =="
 # Users paste these verbatim; a mangled path is a silent failure for them.
 it "the -BootDrive escape hatch survived escaping"
