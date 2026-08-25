@@ -30,11 +30,12 @@ and the rest — the things we would otherwise rediscover one bug at a time.
 sudo PI_PASSWORD='your-password' ./pi-image/build.sh
 ```
 
-Produces `transfer-station-YYYY-MM-DD.img.xz` (~600 MB). Flash it with
+Produces `transfer-station-YYYY-MM-DD.img.xz` (currently about 900 MB). Flash it with
 Raspberry Pi Imager, with **no customisation** — this image already has it.
 
-CI builds one on every push and publishes it as a release asset, so normally
-you just download it.
+CI builds and audits the final compressed image on every relevant push. This
+branch publishes a rolling prerelease at the `pi-image-sdm` tag; the
+top-level README flashers download that exact asset and verify its checksum.
 
 ## Configuring
 
@@ -77,14 +78,20 @@ keeps its own default route and stays online.
 
 `build.sh` downloads the official Raspberry Pi OS Lite image, renders the
 service unit and NetworkManager profile from the manifest, and hands the lot
-to `sdm`, which runs [`cscript.sh`](cscript.sh) in two phases:
+to `sdm`, which runs [`cscript.sh`](cscript.sh) in three hooks:
 
 - **phase 0** — on the host, image mounted at `$SDMPT`. Copies the repo, the
   service unit and the network profile in.
 - **phase 1** — inside the image under `nspawn`. Installs `uv`, builds the
-  venv, verifies the imports, enables the service and SSH.
+  This hook is deliberately empty because sdm has not created the user or
+  installed apt packages yet.
+- **post-install** runs inside the image after sdm's plugins. It installs
+  `uv`, performs `uv sync --frozen`, verifies the imports, and enables the
+  service and SSH.
 
-Then the image is compressed. Around 10-15 minutes, most of it `xz`.
+Then the image is compressed, decompressed again, mounted, and audited before
+publication. CI checks the real filesystem, packages, venv, enabled services,
+boot layout and the no-gateway/no-DNS static network profile.
 
 ## Limits
 
