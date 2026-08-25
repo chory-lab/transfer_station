@@ -33,15 +33,40 @@ if (-not (Test-IsAdmin)) { throw 'Open PowerShell with Run as administrator and 
 $Imager = Find-Imager
 if (-not $Imager) { throw 'Install Raspberry Pi Imager from https://www.raspberrypi.com/software/ and try again.' }
 
-$Disks = @(Get-Disk | Where-Object {
-    $_.BusType -in @('USB','SD','MMC') -and -not $_.IsBoot -and
-    -not $_.IsSystem -and $_.Size -lt 1TB
+# Two tiers. Writable is the real safety boundary: never the disk we booted
+# from, never the system disk, never something too big to be removable media.
+# Autodetect narrows that further by bus, because guessing wrong unprompted is
+# unforgivable -- but the bus is only a hint. Built-in PCIe card readers report
+# SCSI (a Realtek reader here does), so an explicit -DiskNumber has to be able
+# to reach a disk autodetect passed over, or the recovery path does not run on
+# the machine you would be recovering from.
+$Writable = @(Get-Disk | Where-Object {
+    -not $_.IsBoot -and -not $_.IsSystem -and $_.Size -lt 1TB
 })
+$Disks = @($Writable | Where-Object { $_.BusType -in @('USB','SD','MMC') })
 if ($DiskNumber -ge 0) {
-    $Disk = $Disks | Where-Object Number -eq $DiskNumber
-    if (-not $Disk) { throw "Disk $DiskNumber is not an eligible removable disk." }
+    $Disk = $Writable | Where-Object Number -eq $DiskNumber
+    if (-not $Disk) {
+        throw "Disk $DiskNumber is not writable here: it must not be the boot or system disk, and must be under 1TB."
+    }
 } else {
-    if ($Disks.Count -eq 0) { throw 'No removable disk found.' }
+    if ($Disks.Count -eq 0) {
+        # Say which disks were rejected and why, so the next person knows what
+        # to pass rather than concluding the card is not detected at all.
+        Write-Host ''
+        Write-Host 'No removable disk found by bus type.' -ForegroundColor Yellow
+        if ($Writable.Count -gt 0) {
+            Write-Host 'These are writable but did not look removable:'
+            foreach ($d in $Writable) {
+                Write-Host "  Disk $($d.Number)  $($d.FriendlyName)  $([math]::Round($d.Size/1GB,1)) GB  (bus: $($d.BusType))"
+            }
+            Write-Host ''
+            Write-Host 'Built-in card readers often report SCSI. If one of those is your card,'
+            Write-Host 'name it explicitly, e.g.  .\bootstrap.ps1 -DiskNumber ' -NoNewline
+            Write-Host "$($Writable[0].Number)"
+        }
+        throw 'No removable disk found.'
+    }
     Write-Host ''
     for ($i = 0; $i -lt $Disks.Count; $i++) {
         $d = $Disks[$i]
