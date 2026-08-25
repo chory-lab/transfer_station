@@ -54,8 +54,10 @@ mkdir -p "$SDMPT/etc/systemd/system" "$SDMPT/usr/local/sdm" "$SDMPT/home"
 # --- sdm copies the cscript into the image and runs it from there ---------
 install -m 755 "$PI_IMAGE_DIR/cscript.sh" "$SDMPT/usr/local/sdm/cscript.sh"
 
-SDMPT="$SDMPT" PI_IMAGE_BUILD="$BUILD" PI_IMAGE_REPO="$REPO_ROOT" \
+(
+    export SDMPT PI_IMAGE_REPO="$REPO_ROOT" PI_IMAGE_BUILD="$BUILD"
     bash "$SDMPT/usr/local/sdm/cscript.sh" 0
+)
 
 # --- what phase 0 must have left behind -----------------------------------
 [ -f "$SDMPT/etc/pi-image-app.env" ] \
@@ -92,8 +94,11 @@ ok "service unit installed"
 ok "no ownerless files under the home directory"
 
 # --- and it must fail loudly, not silently, without its staging dir -------
-if SDMPT="$SDMPT" PI_IMAGE_REPO="$REPO_ROOT" \
-        bash "$SDMPT/usr/local/sdm/cscript.sh" 0 >/dev/null 2>&1; then
+if (
+    export SDMPT PI_IMAGE_REPO="$REPO_ROOT"
+    unset PI_IMAGE_BUILD
+    bash "$SDMPT/usr/local/sdm/cscript.sh" 0 >/dev/null 2>&1
+); then
     fail "phase 0 succeeded with no PI_IMAGE_BUILD; it cannot have staged anything"
 fi
 ok "missing staging directory is a hard error"
