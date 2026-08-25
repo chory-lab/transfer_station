@@ -1,0 +1,198 @@
+name: pi-image
+
+on:
+  push:
+    branches: [main, sdm-image-builder]
+    paths:
+      - 'pi-image/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '*.py'
+      - 'templates/**'
+      - '.github/workflows/pi-image.yml'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the image as a release asset'
+        type: boolean
+        default: false
+
+jobs:
+  lint:
+    name: manifest and scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shell syntax
+        run: bash -n pi-image/*.sh pi-image/tests/*.sh
+
+      - name: PowerShell flasher parses
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./pi-image/bootstrap.ps1), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.ToString() }; exit 1 }
+
+      - name: shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck -S warning -e SC1090,SC1091 pi-image/*.sh pi-image/tests/*.sh
+
+      # The manifest is sourced by bash; an unquoted value with a space in it
+      # tries to execute. That bug shipped once already.
+      - name: manifest sources cleanly and expands
+        run: |
+          set -e
+          . pi-image/pi-app.env
+          VENV="$REPO_DEST/.venv"
+          E="${APP_EXEC//\$\{VENV\}/$VENV}"
+          E="${E//\$\{SERVER_PORT\}/$SERVER_PORT}"
+          echo "ExecStart = $E"
+          case "$E" in
+            *'${'*) echo "unsubstituted placeholder remains in APP_EXEC" >&2; exit 1 ;;
+          esac
+          test -n "$APP_NAME" && test -n "$PI_USER" && test -n "$ETH_ADDRESS"
+
+      # A pin that is never checked is a comment.
+      - name: every external input is pinned
+        run: |
+          set -e
+          . pi-image/pi-app.env
+          die() { echo "$1" >&2; exit 1; }
+          echo "$IMAGE_SHA256" | grep -Eq "^[0-9a-f]{64}$" || die "IMAGE_SHA256 is not a sha256"
+          echo "$SDM_COMMIT" | grep -Eq "^[0-9a-f]{40}$" || die "SDM_COMMIT is not a full commit sha"
+          echo "$SDM_VERSION" | grep -Eq "^V[0-9]+[.][0-9]+$" || die "SDM_VERSION is not a release tag"
+          echo "$UV_VERSION" | grep -Eq "^[0-9]+[.][0-9]+[.][0-9]+$" || die "UV_VERSION is not a version"
+          case "$IMAGE_URL" in *latest*) die "IMAGE_URL still floats" ;; esac
+          test -s pyproject.toml || die "pyproject.toml is missing"
+          test -s uv.lock || die "uv.lock is missing"
+          grep -q '^version = 1$' uv.lock || die "uv.lock has an unexpected format"
+          grep -q 'hash = "sha256:' uv.lock || die "uv.lock contains no artifact hashes"
+          grep -q -- '--frozen' pi-image/cscript.sh || die "image install is not frozen"
+          grep -q 'uv sync' pi-image/cscript.sh || die "image does not install through uv sync"
+          echo "all inputs pinned"
+
+      # shellcheck cannot see that a path resolves to nothing. Phase 0 runs
+      # on the host, so it can be run here for real against a fake image --
+      # about a second, against a three-minute image build.
+      - name: cscript phase 0 stages the image correctly
+        run: bash pi-image/tests/test_cscript_phase0.sh
+
+      - name: README uses the sdm image flashers
+        run: bash pi-image/tests/test_bootstrap.sh
+
+      - name: the rendered unit is valid
+        run: |
+          . pi-image/pi-app.env
+          VENV="$REPO_DEST/.venv"
+          E="${APP_EXEC//\$\{VENV\}/$VENV}"
+          E="${E//\$\{SERVER_PORT\}/$SERVER_PORT}"
+          cat > /tmp/u.service <<UNIT
+          [Unit]
+          Description=$APP_NAME
+          After=network.target $SERVICE_REQUIRES
+          Requires=$SERVICE_REQUIRES
+          [Service]
+          ExecStart=$E
+          User=$PI_USER
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          systemd-analyze verify /tmp/u.service 2>&1 | tee /tmp/v.log
+          ! grep -qiE 'invalid|failed to parse|unknown lvalue' /tmp/v.log
+
+  macos-flasher:
+    name: macOS Bash 3 flasher compatibility
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: parse with Apple's system Bash
+        run: |
+          /bin/bash --version | head -1
+          /bin/bash -n pi-image/bootstrap.sh
+
+      - name: macOS tools and wiring are present
+        run: |
+          command -v diskutil
+          command -v shasum
+          /bin/bash pi-image/tests/test_bootstrap.sh
+
+  build:
+    name: build the image
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: [lint, macos-flasher]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: free up disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: cache the base image
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pi-image-cache/raspios.img.xz
+          key: raspios-lite-arm64-${{ github.run_id }}
+          restore-keys: raspios-lite-arm64-
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: host tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static systemd-container xz-utils \
+                                  parted e2fsprogs curl
+
+      # PI_PASSWORD comes from a repository secret so it never lands in the
+      # manifest, the logs, or git history. Without one the build still works
+      # and warns, producing an image with the default password.
+      - name: build
+        env:
+          PI_PASSWORD: ${{ secrets.PI_PASSWORD }}
+        run: sudo -E bash pi-image/build.sh /tmp/transfer-station.img.xz
+
+      - name: audit the exact finished image
+        run: sudo bash pi-image/tests/test_built_image.sh /tmp/transfer-station.img.xz
+
+      - name: image summary
+        run: |
+          ls -lh /tmp/transfer-station.img.xz
+          cd /tmp
+          sha256sum transfer-station.img.xz | tee transfer-station.img.xz.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pi-image
+          path: |
+            /tmp/transfer-station.img.xz
+            /tmp/transfer-station.img.xz.sha256
+          retention-days: 14
+
+      - name: publish
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sdm-image-builder' || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/sdm-image-builder" ]; then
+            TAG="pi-image-sdm"
+            EXTRA=(--prerelease)
+          else
+            TAG="pi-image"
+            EXTRA=()
+          fi
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" \
+              /tmp/transfer-station.img.xz /tmp/transfer-station.img.xz.sha256 \
+              "${EXTRA[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "Ready-to-flash Pi image" \
+              --notes "CI-audited image. Flash directly; do not apply Raspberry Pi Imager customisation."

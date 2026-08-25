@@ -10,7 +10,7 @@ import redis
 import A4988    
 
 print(__name__)
-app = Flask(__name__, template_folder = '/home/chorylab/transfer_station/templates')
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
 app.config['CACHE_TYPE'] = 'RedisCache' 
 cache = Cache(app)
 

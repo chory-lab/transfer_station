@@ -62,6 +62,12 @@ assert_no_file() {
 # Counts occurrences of a fixed string in a file.
 count_in_file() { grep -o -F "$2" "$1" 2>/dev/null | wc -l | tr -d ' '; }
 
+# True when a file contains a carriage return. Keep this byte-oriented: text
+# tools can silently normalise CRLF and turn this guard into a no-op.
+has_cr() {
+    LC_ALL=C awk 'BEGIN{cr=sprintf("%c",13)} index($0,cr){found=1} END{exit !found}' "$1"
+}
+
 summary() {
     echo
     if [ "$TESTS_FAILED" -eq 0 ]; then

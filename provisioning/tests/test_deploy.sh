@@ -107,11 +107,14 @@ BCM = 11; BOARD = 10; OUT = 0; IN = 1; HIGH = 1; LOW = 0
 def setmode(*a, **k): pass
 def setwarnings(*a, **k): pass
 def setup(*a, **k): pass
-def output(*a, **k): pass
+def output(pin, value):
+    with open('/tmp/gpio-output.log', 'a') as log:
+        log.write(f'{pin}:{value}\n')
 def input(*a, **k): return 1
 def cleanup(*a, **k): pass
 PY
 chmod -R a+rX "$STUB"
+rm -f /tmp/gpio-output.log
 
 # Not --daemonize: forking a daemon is unreliable under qemu-user emulation.
 redis-server --save '' --appendonly no >/tmp/redis.log 2>&1 &
@@ -162,10 +165,32 @@ CODE="$(curl -s -o /tmp/index.html -w '%{http_code}' "http://127.0.0.1:${SERVER_
 assert_eq "$CODE" "200"
 [ "$CODE" = "200" ] || { echo "--- server log ---"; cat /tmp/server.log; }
 
-it "serves the control UI from the hardcoded templates path"
+it "serves the control UI from the packaged templates path"
 assert_contains "$(cat /tmp/index.html 2>/dev/null)" "Run Motor"
 
 it "/status endpoint works (redis-backed cache is wired up)"
+STATUS="$(curl -fsS "http://127.0.0.1:${SERVER_PORT}/status" 2>/dev/null)"
+assert_eq "$STATUS" "False"
+
+it "a short Go Right command reaches the motor driver"
+CODE="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+    -d 'go_right=Go Right&step_num=2&step_delay=0' \
+    "http://127.0.0.1:${SERVER_PORT}/" 2>/dev/null)"
+assert_eq "$CODE" "200"
+
+GPIO_LOG="$(cat /tmp/gpio-output.log 2>/dev/null)"
+it "the command sets direction clockwise"
+assert_contains "$GPIO_LOG" "22:True"
+
+it "the command enables and then disables the A4988"
+assert_contains "$GPIO_LOG" "24:0"
+assert_contains "$GPIO_LOG" "24:1"
+
+it "the command emits step pulses"
+assert_contains "$GPIO_LOG" "23:True"
+assert_contains "$GPIO_LOG" "23:False"
+
+it "the motor returns to idle after the command"
 STATUS="$(curl -fsS "http://127.0.0.1:${SERVER_PORT}/status" 2>/dev/null)"
 assert_eq "$STATUS" "False"
 

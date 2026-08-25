@@ -9,15 +9,9 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-CONFIG=/usr/local/share/transfer-station-config.env
-TMPL=/usr/local/share/transfer-station.service.tmpl
-# shellcheck disable=SC1090
-. "$CONFIG"
-
-# Mirror everything to the FAT boot partition as well as the journal. If this
-# stage fails, the journal lives on ext4 and is unreadable from a Windows or
-# macOS machine -- but the card's boot partition mounts anywhere, so pulling
-# the SD card and reading provision.log is the quickest way to see why.
+# Establish logging FIRST. Anything that can fail must fail into the log,
+# not before it exists -- sourcing the config used to come first, so a missing
+# config file killed this script under `set -e` with no output anywhere.
 for _b in /boot/firmware /boot; do
     if [ -d "$_b/transfer-station" ]; then
         exec > >(tee -a "$_b/transfer-station/provision.log") 2>&1
@@ -32,6 +26,16 @@ done
 trap 'sync' EXIT
 
 echo "=== transfer-station provisioning $(date -u) ==="
+
+CONFIG=/usr/local/share/transfer-station-config.env
+TMPL=/usr/local/share/transfer-station.service.tmpl
+if [ ! -f "$CONFIG" ]; then
+    echo "ERROR: $CONFIG is missing. Stage A should have installed it;" >&2
+    echo "       re-provision the card and boot again." >&2
+    exit 1
+fi
+# shellcheck disable=SC1090
+. "$CONFIG"
 
 # --- offline bundle -------------------------------------------------------
 # If the card carries a dependency bundle, everything installs from it and
@@ -64,7 +68,32 @@ fi
 # runs for real so dependency resolution is genuinely tested.
 if [ "${TS_CI:-0}" = "1" ]; then
     echo "*** TS_CI=1: systemctl and reboot are stubbed ***"
-    systemctl() { echo "[ci] systemctl $*"; return 0; }
+    # A stub that succeeds for ANY arguments is how a fused command line --
+    # `systemctl enable redis-serversystemctl enable redis-server` -- passed
+    # CI and then killed stage B on real hardware. Real systemd rejects a
+    # unit it does not know, so the stub has to as well, or the test is only
+    # confirming that the script runs, not that it says anything sensible.
+    systemctl() {
+        local _a
+        for _a in "$@"; do
+            case "$_a" in
+                enable|disable|start|stop|restart|daemon-reload|reboot|is-active|--quiet|--now)
+                    ;;
+                redis-server|redis-server.service|ssh|ssh.service|NetworkManager|NetworkManager.service)
+                    ;;
+                transfer-station.service|transfer-station-provision.service)
+                    ;;
+                *)
+                    echo "[ci] systemctl: unknown unit or verb '$_a'" >&2
+                    return 1
+                    ;;
+            esac
+        done
+        echo "[ci] systemctl $*"
+        # Nothing is actually running inside the chroot.
+        [ "${1:-}" = "is-active" ] && return 1
+        return 0
+    }
     mkdir -p /etc/NetworkManager/system-connections
 fi
 
@@ -130,6 +159,13 @@ else
     apt-get install -y --no-install-recommends $PKGS
 fi
 
+# Two lines fused into one here once, producing
+#   systemctl enable redis-serversystemctl enable redis-server
+# which asks systemd for a unit that does not exist. Under `set -e` that
+# killed stage B on this line -- after dpkg, but before the venv, the
+# server unit and the static address. The Pi booted fine and was simply
+# not on the network. CI missed it because TS_CI stubs systemctl to
+# return 0 for any arguments at all.
 systemctl enable redis-server
 
 # --- uv -------------------------------------------------------------------
@@ -138,21 +174,30 @@ if ! command -v uv >/dev/null 2>&1; then
         tar -xzf "$BUNDLE/uv.tar.gz" -C /tmp
         install -m 755 "$(find /tmp -name uv -type f | head -1)" /usr/local/bin/uv
     else
-        curl -LsSf https://astral.sh/uv/install.sh             | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+        curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" \
+            | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
     fi
 fi
-uv --version
+UV_GOT="$(uv --version 2>&1)"
+echo "$UV_GOT"
+case "$UV_GOT" in
+    "uv ${UV_VERSION}"*) ;;
+    *) echo "ERROR: expected uv ${UV_VERSION}, got: ${UV_GOT}" >&2; exit 1 ;;
+esac
 
 # --- python environment ---------------------------------------------------
 # Built on the SYSTEM interpreter with system site-packages visible, so the
 # apt-installed RPi.GPIO stays importable. uv only manages the pure-Python
-# deps in requirements.txt.
+# deps locked in uv.lock.
 rm -rf "${REPO_DEST}/.venv"
 uv venv --python /usr/bin/python3 --system-site-packages "${REPO_DEST}/.venv"
 if [ -n "$BUNDLE" ]; then
-    uv pip install --python "${REPO_DEST}/.venv/bin/python"         --no-index --find-links "$BUNDLE/wheels" -r "${REPO_DEST}/requirements.txt"
+    UV_PROJECT_ENVIRONMENT="${REPO_DEST}/.venv" uv sync \
+        --project "$REPO_DEST" --frozen --no-dev --python /usr/bin/python3 \
+        --offline --find-links "$BUNDLE/wheels"
 else
-    uv pip install --python "${REPO_DEST}/.venv/bin/python" -r "${REPO_DEST}/requirements.txt"
+    UV_PROJECT_ENVIRONMENT="${REPO_DEST}/.venv" uv sync \
+        --project "$REPO_DEST" --frozen --no-dev --python /usr/bin/python3
 fi
 # RPi.GPIO is checked by spec rather than import: importing it on non-Pi
 # hardware (i.e. in CI) raises, but presence on sys.path is what we need.

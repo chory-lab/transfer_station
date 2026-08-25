@@ -135,7 +135,8 @@ try {
     $list = & tar -tzf (Join-Path $payload 'repo.tar.gz')
     It "includes the flask app"    { $list -contains './api_step_motor.py' }
     It "includes the templates"    { $list -contains './templates/buttons.html' }
-    It "includes requirements.txt" { $list -contains './requirements.txt' }
+    It "includes pyproject.toml"   { $list -contains './pyproject.toml' }
+    It "includes uv.lock"          { $list -contains './uv.lock' }
     It "excludes the stale venv"   { -not ($list | Where-Object { $_ -like './foobar/*' }) }
     It "excludes .git"             { -not ($list | Where-Object { $_ -like './.git/*' }) }
     It "excludes provisioning/"    { -not ($list | Where-Object { $_ -like './provisioning/*' }) }

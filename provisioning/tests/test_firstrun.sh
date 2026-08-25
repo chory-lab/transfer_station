@@ -108,7 +108,7 @@ echo "== repository =="
 it "extracts the app to REPO_DEST"
 assert_file "${REPO_DEST}/api_step_motor.py"
 
-it "extracts the templates to the path the app hardcodes"
+it "extracts the templates beside the app"
 assert_file "${REPO_DEST}/templates/buttons.html"
 
 it "repo is owned by ${PI_USER}"

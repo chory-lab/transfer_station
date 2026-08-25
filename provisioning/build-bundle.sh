@@ -14,7 +14,7 @@
 set -euo pipefail
 
 OUT="${1:-/bundle}"
-UV_VERSION="${UV_VERSION:-latest}"
+UV_VERSION="${UV_VERSION:-0.12.5}"
 
 mkdir -p "$OUT/debs" "$OUT/wheels"
 
@@ -52,13 +52,21 @@ echo ">> fetching uv for ${UV_TRIPLE}"
 curl -fsSL --retry 3 -o "$OUT/uv.tar.gz" "$UV_URL"
 
 # --- python wheels --------------------------------------------------------
-# Every runtime dep is pure Python (py3-none-any), so these are portable; the
-# only C extension, RPi.GPIO, comes from the .deb above.
+# Export the already-resolved uv.lock rather than resolving a second time via
+# a floating requirements file. Every runtime dep is pure Python; the only C
+# extension, RPi.GPIO, comes from the .deb above.
 apt-get install -y --no-install-recommends python3-pip
+UV_TMP="$(mktemp -d)"
+tar -xzf "$OUT/uv.tar.gz" -C "$UV_TMP"
+UV_BIN="$(find "$UV_TMP" -name uv -type f | head -1)"
+"$UV_BIN" export --project /work --frozen --no-dev --no-emit-project \
+    --format requirements-txt --output-file /tmp/transfer-station.lock.txt
 python3 -m pip download \
     --only-binary=:all: \
     --dest "$OUT/wheels" \
-    -r /work/requirements.txt
+    --require-hashes \
+    -r /tmp/transfer-station.lock.txt
+rm -rf "$UV_TMP" /tmp/transfer-station.lock.txt
 
 # --- manifest -------------------------------------------------------------
 cat > "$OUT/manifest.env" <<MANIFEST

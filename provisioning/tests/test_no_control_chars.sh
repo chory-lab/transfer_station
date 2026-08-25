@@ -19,7 +19,7 @@ REPO_ROOT="$(cd "$HERE/../.." && pwd)"
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
 
-cd "$REPO_ROOT"
+cd "$REPO_ROOT" || exit 1
 
 echo "== no stray control characters in tracked text files =="
 
@@ -120,12 +120,12 @@ if [ "$DUP_FOUND" -eq 0 ]; then pass; else fail "see above"; fi
 echo
 echo "== the README's copy-paste commands are intact =="
 # Users paste these verbatim; a mangled path is a silent failure for them.
-it "the -BootDrive escape hatch survived escaping"
-assert_contains "$(cat README.md)" '.\bootstrap.ps1 -BootDrive'
+it "the explicit disk-number escape hatch survived escaping"
+assert_contains "$(cat README.md)" '.\bootstrap.ps1 -DiskNumber'
 
 for u in bootstrap.ps1 bootstrap.sh; do
-    it "README references provisioning/$u by its real path"
-    assert_contains "$(cat README.md)" "provisioning/$u"
+    it "README references pi-image/$u by its real path"
+    assert_contains "$(cat README.md)" "pi-image/$u"
 done
 
 summary

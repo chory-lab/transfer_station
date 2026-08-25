@@ -7,69 +7,63 @@ This repository holds the code (and previously used test code) for the functioni
 
 <h2>SD Card Setup</h2>
 
-Builds a ready-to-run card: this repo installed, the server started at boot,
-and ethernet pinned to <code>192.168.10.1</code> on an isolated segment that
-is not reachable from the lab LAN. Assumes the controller PC is already
-configured for that segment.
+This branch publishes a complete, CI-audited Raspberry Pi OS image with the
+application, Redis, frozen Python environment, systemd service and isolated
+network configuration already installed. The flashers verify its SHA-256.
 
 <h3>Windows</h3>
 
 Insert the SD card, then paste into an <b>Administrator</b> PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 | iex
+irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.ps1 | iex
 ```
 
-If it cannot find the card, it lists the drives Windows can see. Point it at
-the right one explicitly (note this form downloads the script first, as
-<code>iex</code> cannot take parameters):
+To select a physical disk number explicitly, download the script first:
 
 ```powershell
-irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.ps1 -OutFile bootstrap.ps1
-.\bootstrap.ps1 -BootDrive E:
+irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.ps1 -OutFile bootstrap.ps1
+.\bootstrap.ps1 -DiskNumber 3
 ```
 
-The card can be blank &mdash; the script writes Raspberry Pi OS Lite (64-bit)
-for you. Requires
+The media can be blank. Requires
 <a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> to be
-installed, which it uses to do the write.
+installed; Imager writes and verifies the complete prebuilt image.
 
-<h3>Linux / macOS</h3>
+<h3>macOS / Linux</h3>
 
-Insert a blank card and paste into a terminal (the script downloads
-Raspberry Pi OS Lite 64-bit for you):
+Insert a removable SD card or USB drive and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/provisioning/bootstrap.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.sh | sudo bash
 ```
+
+On macOS, install
+<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> first;
+the script uses it to write and verify the selected external disk. Linux uses
+the standard <code>lsblk</code>, <code>xz</code>, and <code>dd</code> tools.
 
 <h3>Then</h3>
 
-The script asks which card to use and what password to set, and downloads
-everything the Pi needs onto the card &mdash; redis, the Python packages, all
-of it. When it finishes, put the card in the Pi and switch it on. <b>No
-internet needed on the Pi.</b> It reboots twice on its own, then comes up on
-the isolated link:
+The script asks which removable device to erase, downloads the audited sdm
+image, verifies its checksum, and writes it. Put the media in the Pi and
+switch it on. <b>No internet is needed on the Pi.</b> Configure the
+controller PC's Ethernet adapter as <code>192.168.10.2/24</code> with no
+gateway; the Pi comes up at:
 
 ```
 http://192.168.10.1:5000        ssh chorylab@192.168.10.1
 ```
 
-That is the whole procedure.
+This branch currently uses the image build credential. Until the
+<code>PI_PASSWORD</code> repository secret is configured and a new image is
+published, the password is <code>changeme</code>. Change it after login.
 
 <blockquote>
-The Desktop and Full images work too, but Lite is preferred &mdash; a headless
-motor controller has no use for a GUI. <b>64-bit is what matters.</b>
-If Windows gives the card's <code>bootfs</code> partition no drive letter
-(Disk Management shows the label but the letter column is blank), the script
-assigns one for you &mdash; but only when PowerShell was started with
-<b>Run as administrator</b>. Otherwise assign the letter by hand first.
-Needs a Pi with an ethernet port &mdash; a Pi 4 Model B is the target. The Pi
-Zero 2 W in the parts list below is Wi-Fi only and cannot do this.
-Logs land on the card itself (<code>transfer-station/*.log</code> on the boot
-partition) if a first boot goes wrong.
-See <a href="provisioning/README.md">provisioning/README.md</a> for
-configuration, internals and tests.
+The image targets a Pi 4 Model B and works from SD or USB mass storage when
+the Pi EEPROM permits USB boot. Do not apply Raspberry Pi Imager OS
+customisation: the image is already configured. See
+<a href="pi-image/README.md">pi-image/README.md</a> for internals and limits.
 </blockquote>
 
 <h2>Software</h2>

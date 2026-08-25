@@ -41,6 +41,11 @@ jobs:
       - name: no stray control characters in tracked files
         run: bash provisioning/tests/test_no_control_chars.sh
 
+      # Fused command lines are valid bash and pass shellcheck. One of them
+      # killed stage B on hardware while CI stayed green.
+      - name: systemctl calls name units we actually ship
+        run: bash provisioning/tests/test_systemctl_calls.sh
+
       - name: config.env is parseable by both shells
         run: |
           bash -c '. provisioning/config.env; echo "$ETH_ADDRESS:$SERVER_PORT"'
@@ -59,6 +64,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y dosfstools parted
           sudo bash provisioning/tests/test_flash_image.sh
+
+  motor-server:
+    name: motor server command path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install pinned uv and Redis
+        run: |
+          curl -LsSf https://astral.sh/uv/0.12.5/install.sh \
+            | env UV_INSTALL_DIR="$RUNNER_TEMP/uv-bin" INSTALLER_NO_MODIFY_PATH=1 sh
+          echo "$RUNNER_TEMP/uv-bin" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+
+      - name: install the frozen application environment
+        run: uv sync --frozen --no-dev
+
+      - name: real Flask + Redis + A4988 command smoke test
+        run: bash provisioning/tests/test_motor_server.sh
 
   flash-windows:
     name: flash pipeline (windows)

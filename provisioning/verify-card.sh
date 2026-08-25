@@ -146,8 +146,10 @@ if [ "$PHASE" = "preboot" ]; then
         check "contains the flask app" "$R"
         case "$LIST" in *"./templates/buttons.html"*) R=0;; *) R=1;; esac
         check "contains the templates" "$R"
-        case "$LIST" in *"./requirements.txt"*) R=0;; *) R=1;; esac
-        check "contains requirements" "$R"
+        case "$LIST" in *"./pyproject.toml"*) R=0;; *) R=1;; esac
+        check "contains pyproject.toml" "$R"
+        case "$LIST" in *"./uv.lock"*) R=0;; *) R=1;; esac
+        check "contains uv.lock" "$R"
     else
         check "repo.tar.gz is a readable archive" 1
     fi
