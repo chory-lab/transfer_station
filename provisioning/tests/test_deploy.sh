@@ -187,8 +187,8 @@ assert_contains "$GPIO_LOG" "24:0"
 assert_contains "$GPIO_LOG" "24:1"
 
 it "the command emits step pulses"
-assert_contains "$GPIO_LOG" "23:1"
-assert_contains "$GPIO_LOG" "23:0"
+assert_contains "$GPIO_LOG" "23:True"
+assert_contains "$GPIO_LOG" "23:False"
 
 it "the motor returns to idle after the command"
 STATUS="$(curl -fsS "http://127.0.0.1:${SERVER_PORT}/status" 2>/dev/null)"
