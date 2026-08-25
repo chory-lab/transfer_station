@@ -138,20 +138,21 @@ PC keeps internet while talking to the Pi over the switch.
 
 ## Python environment
 
-`uv` manages the pure-Python deps in `requirements.txt`. The venv is built on
+`uv` manages the pure-Python deps in `pyproject.toml` and the frozen `uv.lock`.
+The venv is built on
 the **system** interpreter with `--system-site-packages`, so the apt-provided
 `RPi.GPIO` C extension stays importable:
 
 ```bash
 uv venv --python /usr/bin/python3 --system-site-packages .venv
-uv pip install -r requirements.txt
+UV_PROJECT_ENVIRONMENT=.venv uv sync --frozen --no-dev
 ```
 
 To update deps on a running unit:
 
 ```bash
 cd /home/chorylab/transfer_station
-uv pip install --python .venv/bin/python -r requirements.txt
+UV_PROJECT_ENVIRONMENT=.venv uv sync --frozen --no-dev
 sudo systemctl restart transfer-station
 ```
 

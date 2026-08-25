@@ -142,21 +142,30 @@ if ! command -v uv >/dev/null 2>&1; then
         tar -xzf "$BUNDLE/uv.tar.gz" -C /tmp
         install -m 755 "$(find /tmp -name uv -type f | head -1)" /usr/local/bin/uv
     else
-        curl -LsSf https://astral.sh/uv/install.sh             | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+        curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" \
+            | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
     fi
 fi
-uv --version
+UV_GOT="$(uv --version 2>&1)"
+echo "$UV_GOT"
+case "$UV_GOT" in
+    "uv ${UV_VERSION}"*) ;;
+    *) echo "ERROR: expected uv ${UV_VERSION}, got: ${UV_GOT}" >&2; exit 1 ;;
+esac
 
 # --- python environment ---------------------------------------------------
 # Built on the SYSTEM interpreter with system site-packages visible, so the
 # apt-installed RPi.GPIO stays importable. uv only manages the pure-Python
-# deps in requirements.txt.
+# deps locked in uv.lock.
 rm -rf "${REPO_DEST}/.venv"
 uv venv --python /usr/bin/python3 --system-site-packages "${REPO_DEST}/.venv"
 if [ -n "$BUNDLE" ]; then
-    uv pip install --python "${REPO_DEST}/.venv/bin/python"         --no-index --find-links "$BUNDLE/wheels" -r "${REPO_DEST}/requirements.txt"
+    UV_PROJECT_ENVIRONMENT="${REPO_DEST}/.venv" uv sync \
+        --project "$REPO_DEST" --frozen --no-dev --python /usr/bin/python3 \
+        --offline --find-links "$BUNDLE/wheels"
 else
-    uv pip install --python "${REPO_DEST}/.venv/bin/python" -r "${REPO_DEST}/requirements.txt"
+    UV_PROJECT_ENVIRONMENT="${REPO_DEST}/.venv" uv sync \
+        --project "$REPO_DEST" --frozen --no-dev --python /usr/bin/python3
 fi
 # RPi.GPIO is checked by spec rather than import: importing it on non-Pi
 # hardware (i.e. in CI) raises, but presence on sys.path is what we need.

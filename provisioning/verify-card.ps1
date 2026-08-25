@@ -150,7 +150,8 @@ if ($phase -eq 'preboot') {
     if ($tarOk) {
         Check 'contains the flask app' ($list -contains './api_step_motor.py')
         Check 'contains the templates' ($list -contains './templates/buttons.html')
-        Check 'contains requirements'  ($list -contains './requirements.txt')
+        Check 'contains pyproject.toml' ($list -contains './pyproject.toml')
+        Check 'contains uv.lock'        ($list -contains './uv.lock')
     }
 
 } else {
