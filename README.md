@@ -16,13 +16,13 @@ network configuration already installed. The flashers verify its SHA-256.
 Insert the SD card, then paste into an <b>Administrator</b> PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/chory-lab/transfer_station/sdm-image-builder/pi-image/bootstrap.ps1 | iex
+irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.ps1 | iex
 ```
 
 To select a physical disk number explicitly, download the script first:
 
 ```powershell
-irm https://raw.githubusercontent.com/chory-lab/transfer_station/sdm-image-builder/pi-image/bootstrap.ps1 -OutFile bootstrap.ps1
+irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.ps1 -OutFile bootstrap.ps1
 .\bootstrap.ps1 -DiskNumber 3
 ```
 
@@ -35,7 +35,7 @@ installed; Imager writes and verifies the complete prebuilt image.
 Insert a removable SD card or USB drive and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/sdm-image-builder/pi-image/bootstrap.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.sh | sudo bash
 ```
 
 <h3>Then</h3>

@@ -2,7 +2,7 @@
 # Download the CI-audited sdm image and write it to removable media.
 set -euo pipefail
 
-IMAGE_URL="https://github.com/chory-lab/transfer_station/releases/download/pi-image-sdm/transfer-station.img.xz"
+IMAGE_URL="https://github.com/chory-lab/transfer_station/releases/download/pi-image/transfer-station.img.xz"
 SHA_URL="${IMAGE_URL}.sha256"
 CACHE="${TS_IMAGE_CACHE:-${SUDO_USER:+/home/$SUDO_USER}/.cache/transfer-station-sdm}"
 CACHE="${CACHE:-/tmp/transfer-station-sdm}"

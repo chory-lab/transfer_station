@@ -33,9 +33,9 @@ sudo PI_PASSWORD='your-password' ./pi-image/build.sh
 Produces `transfer-station-YYYY-MM-DD.img.xz` (currently about 900 MB). Flash it with
 Raspberry Pi Imager, with **no customisation** — this image already has it.
 
-CI builds and audits the final compressed image on every relevant push. This
-branch publishes a rolling prerelease at the `pi-image-sdm` tag; the
-top-level README flashers download that exact asset and verify its checksum.
+CI builds and audits the final compressed image on every relevant push. Main
+publishes the rolling `pi-image` release; the top-level README flashers
+download that exact asset and verify its checksum.
 
 ## Configuring
 

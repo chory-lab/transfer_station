@@ -1,12 +1,12 @@
 <#
   Download the CI-audited sdm image and write it with Raspberry Pi Imager:
 
-    irm https://raw.githubusercontent.com/chory-lab/transfer_station/sdm-image-builder/pi-image/bootstrap.ps1 | iex
+    irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.ps1 | iex
 #>
 param([int]$DiskNumber = -1)
 $ErrorActionPreference = 'Stop'
 
-$ImageUrl = 'https://github.com/chory-lab/transfer_station/releases/download/pi-image-sdm/transfer-station.img.xz'
+$ImageUrl = 'https://github.com/chory-lab/transfer_station/releases/download/pi-image/transfer-station.img.xz'
 $ShaUrl = "$ImageUrl.sha256"
 $Cache = Join-Path $env:LOCALAPPDATA 'transfer-station-sdm'
 $Image = Join-Path $Cache 'transfer-station.img.xz'
