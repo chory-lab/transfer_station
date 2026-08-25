@@ -3,7 +3,16 @@
 
     irm https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.ps1 | iex
 #>
-param([int]$DiskNumber = -1)
+param(
+    [int]$DiskNumber = -1,
+    # Imager refuses a destination it does not consider removable. Built-in
+    # PCIe card readers do not advertise removability -- Windows reports this
+    # one as BusType SCSI -- so a genuine SD card can be rejected. This
+    # overrules that check, and is deliberately opt-in: it is the one guard
+    # that would still catch a second internal drive that is neither the boot
+    # nor the system disk, which our own checks let through.
+    [switch]$AllowNonRemovable
+)
 $ErrorActionPreference = 'Stop'
 
 $ImageUrl = 'https://github.com/chory-lab/transfer_station/releases/download/pi-image/transfer-station.img.xz'
@@ -154,14 +163,29 @@ Write-Host '>> writing and verifying the audited image'
 # it had never written. Imager ships rpi-imager-cli.cmd for exactly this
 # reason; that wrapper's own comment reads "necessary because it is compiled
 # as GUI application, and Windows normally does not wait until those exit".
-$Target = "\\.\PHYSICALDRIVE$($Disk.Number)"
+# Match Imager's own spelling of the device path.
+$Target = "\\.\PhysicalDrive$($Disk.Number)"
 $Before = (Get-Disk -Number $Disk.Number).Signature
 
 # Start-Process -Wait blocks whatever the subsystem, which is the same trick
 # the wrapper uses. Calling the exe directly avoids handing a path with
 # spaces through cmd's quoting rules, which breaks it.
-$proc = Start-Process -FilePath $Imager -Wait -PassThru -ArgumentList @('--cli', $Image, $Target)
+$ImagerArgs = @('--cli', $Image, $Target)
+if ($AllowNonRemovable) { $ImagerArgs += '--enable-writing-system-drives' }
+$proc = Start-Process -FilePath $Imager -Wait -PassThru -ArgumentList $ImagerArgs
 if ($proc.ExitCode -ne 0) {
+    if (-not $AllowNonRemovable) {
+        Write-Host ''
+        Write-Host 'If Imager said the destination is not a removable volume, that is its' -ForegroundColor Yellow
+        Write-Host 'own check, not ours: built-in card readers do not report themselves as'
+        Write-Host 'removable. Disk ' -NoNewline
+        Write-Host $Disk.Number -NoNewline
+        Write-Host ' is neither the boot nor the system disk and is under the'
+        Write-Host 'card-size cap, so if you are certain it is the card, re-run with:'
+        Write-Host ''
+        Write-Host ('    .' + [char]92 + 'bootstrap.ps1 -DiskNumber ' + $Disk.Number + ' -AllowNonRemovable')
+        Write-Host ''
+    }
     throw "Raspberry Pi Imager failed with exit code $($proc.ExitCode)."
 }
 
