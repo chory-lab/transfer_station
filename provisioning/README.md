@@ -20,9 +20,6 @@ lab LAN. It is visible only to hosts plugged into the same switch.
 Edit `config.env` before flashing to change the address, port, hostname or
 password.
 
-> `api_step_motor.py` hardcodes `/home/chorylab/transfer_station/templates`,
-> so `PI_USER` must stay `chorylab` unless you also change that path.
-
 ## Flashing
 
 ### Windows
@@ -182,7 +179,8 @@ without `TS_ALLOW_DESTRUCTIVE=1` and are intended for a disposable container.
 The deployment smoke test shims `RPi.GPIO` via `PYTHONPATH` (the real module
 raises on non-Pi hardware) and runs a real `redis-server`, so it genuinely
 exercises the app's import chain, the Redis-backed cache and template
-rendering from the hardcoded `templates/` path.
+rendering from the packaged `templates/` directory. A separate native job
+always sends a short motion command and verifies the A4988 pin sequence.
 
 ## CI
 

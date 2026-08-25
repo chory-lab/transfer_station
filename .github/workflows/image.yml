@@ -65,6 +65,26 @@ jobs:
           sudo apt-get install -y dosfstools parted
           sudo bash provisioning/tests/test_flash_image.sh
 
+  motor-server:
+    name: motor server command path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install pinned uv and Redis
+        run: |
+          curl -LsSf https://astral.sh/uv/0.12.5/install.sh \
+            | env UV_INSTALL_DIR="$RUNNER_TEMP/uv-bin" INSTALLER_NO_MODIFY_PATH=1 sh
+          echo "$RUNNER_TEMP/uv-bin" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+
+      - name: install the frozen application environment
+        run: uv sync --frozen --no-dev
+
+      - name: real Flask + Redis + A4988 command smoke test
+        run: bash provisioning/tests/test_motor_server.sh
+
   flash-windows:
     name: flash pipeline (windows)
     runs-on: windows-latest

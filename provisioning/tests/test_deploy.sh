@@ -165,7 +165,7 @@ CODE="$(curl -s -o /tmp/index.html -w '%{http_code}' "http://127.0.0.1:${SERVER_
 assert_eq "$CODE" "200"
 [ "$CODE" = "200" ] || { echo "--- server log ---"; cat /tmp/server.log; }
 
-it "serves the control UI from the hardcoded templates path"
+it "serves the control UI from the packaged templates path"
 assert_contains "$(cat /tmp/index.html 2>/dev/null)" "Run Motor"
 
 it "/status endpoint works (redis-backed cache is wired up)"
