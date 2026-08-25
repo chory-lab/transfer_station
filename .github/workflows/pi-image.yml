@@ -103,11 +103,28 @@ jobs:
           systemd-analyze verify /tmp/u.service 2>&1 | tee /tmp/v.log
           ! grep -qiE 'invalid|failed to parse|unknown lvalue' /tmp/v.log
 
+  macos-flasher:
+    name: macOS Bash 3 flasher compatibility
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: parse with Apple's system Bash
+        run: |
+          /bin/bash --version | head -1
+          /bin/bash -n pi-image/bootstrap.sh
+
+      - name: macOS tools and wiring are present
+        run: |
+          command -v diskutil
+          command -v shasum
+          /bin/bash pi-image/tests/test_bootstrap.sh
+
   build:
     name: build the image
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    needs: lint
+    needs: [lint, macos-flasher]
     permissions:
       contents: write
     steps:

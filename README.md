@@ -30,13 +30,18 @@ The media can be blank. Requires
 <a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> to be
 installed; Imager writes and verifies the complete prebuilt image.
 
-<h3>Linux</h3>
+<h3>macOS / Linux</h3>
 
 Insert a removable SD card or USB drive and run:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/chory-lab/transfer_station/main/pi-image/bootstrap.sh | sudo bash
 ```
+
+On macOS, install
+<a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a> first;
+the script uses it to write and verify the selected external disk. Linux uses
+the standard <code>lsblk</code>, <code>xz</code>, and <code>dd</code> tools.
 
 <h3>Then</h3>
 

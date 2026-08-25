@@ -12,6 +12,13 @@ for script in "$ROOT/pi-image/bootstrap.sh" "$ROOT/pi-image/bootstrap.ps1"; do
     grep -qi 'sha256\|checksum' "$script"
     grep -q 'ERASE' "$script"
 done
+grep -q 'Darwin' "$ROOT/pi-image/bootstrap.sh"
+grep -q 'diskutil list external physical' "$ROOT/pi-image/bootstrap.sh"
+grep -q 'shasum -a 256' "$ROOT/pi-image/bootstrap.sh"
+grep -q 'Raspberry Pi Imager.app' "$ROOT/pi-image/bootstrap.sh"
+grep -q 'Linux' "$ROOT/pi-image/bootstrap.sh"
+grep -q 'lsblk' "$ROOT/pi-image/bootstrap.sh"
+grep -q 'macOS / Linux' "$README"
 grep -q 'TAG="pi-image"' "$ROOT/.github/workflows/pi-image.yml"
 grep -q -- '--prerelease' "$ROOT/.github/workflows/pi-image.yml"
 echo "bootstrap wiring ok"
