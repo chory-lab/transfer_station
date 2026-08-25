@@ -11,6 +11,14 @@ $ShaUrl = "$ImageUrl.sha256"
 $Cache = Join-Path $env:LOCALAPPDATA 'transfer-station-sdm'
 $Image = Join-Path $Cache 'transfer-station.img.xz'
 
+# Upper bound on what can plausibly be the SD card. SD cards for this job top
+# out around 128GB and the image needs only a few; any machine doing the
+# writing has far more. IsBoot and IsSystem are the guards that matter, but
+# they only protect the disk you booted from -- a second internal drive is
+# neither. This is what stops -DiskNumber naming one of those by mistake, so
+# keep it near the top of the plausible card range rather than the disk range.
+$MaxCardBytes = 130GB
+
 function Test-IsAdmin {
     ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -41,13 +49,14 @@ if (-not $Imager) { throw 'Install Raspberry Pi Imager from https://www.raspberr
 # to reach a disk autodetect passed over, or the recovery path does not run on
 # the machine you would be recovering from.
 $Writable = @(Get-Disk | Where-Object {
-    -not $_.IsBoot -and -not $_.IsSystem -and $_.Size -lt 1TB
+    -not $_.IsBoot -and -not $_.IsSystem -and $_.Size -lt $MaxCardBytes
 })
 $Disks = @($Writable | Where-Object { $_.BusType -in @('USB','SD','MMC') })
 if ($DiskNumber -ge 0) {
     $Disk = $Writable | Where-Object Number -eq $DiskNumber
     if (-not $Disk) {
-        throw "Disk $DiskNumber is not writable here: it must not be the boot or system disk, and must be under 1TB."
+        $limit = [math]::Round($MaxCardBytes / 1GB)
+        throw "Disk $DiskNumber is not writable here: it must not be the boot or system disk, and must be under ${limit}GB."
     }
 } else {
     if ($Disks.Count -eq 0) {

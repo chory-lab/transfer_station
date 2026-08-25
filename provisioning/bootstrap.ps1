@@ -204,7 +204,7 @@ if ($BootDrive) {
         $disks = @(Get-Disk | Where-Object {
             $_.BusType -in @('USB', 'SD', 'MMC') -and
             -not $_.IsBoot -and -not $_.IsSystem -and
-            $_.Size -lt 1TB
+            $_.Size -lt 130GB   # plausible SD card, not a second internal drive
         })
         if ($disks.Count -eq 0) {
             Write-Host ''
