@@ -1,0 +1,13 @@
+[project]
+name = "transfer-station"
+version = "0.1.0"
+description = "Stepper-rail control server for the Chory Lab transfer station"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=2.2.2",
+    "flask-caching>=2.0",
+    "redis>=4.5",
+]
+
+# RPi.GPIO is deliberately absent: it is a C extension supplied by Raspberry
+# Pi OS as python3-rpi.gpio and exposed through the venv's system site packages.

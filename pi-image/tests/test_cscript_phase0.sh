@@ -64,7 +64,7 @@ grep -q '^PI_PASSWORD=test-password$' "$SDMPT/etc/pi-image-app.env" \
     || fail "the manifest in the image is not the one build.sh rendered"
 ok "manifest staged for phase 1"
 
-for f in api_step_motor.py A4988.py requirements.txt templates; do
+for f in api_step_motor.py A4988.py pyproject.toml uv.lock templates; do
     [ -e "$SDMPT$REPO_DEST/$f" ] || fail "repo is missing $f"
 done
 ok "application unpacked at $REPO_DEST"

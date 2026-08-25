@@ -49,7 +49,8 @@ the entire interface:
 | `APP_EXEC` | the command the service runs; `${VENV}` and `${SERVER_PORT}` are substituted |
 | `ETH_*`, `SERVER_PORT` | the isolated link |
 
-Pure-Python dependencies come from `requirements.txt`, installed with `uv`
+Pure-Python dependencies come from `pyproject.toml` and are installed from
+the hash-pinned `uv.lock` with `uv sync --frozen`
 into a venv built on the system interpreter with `--system-site-packages` so
 apt's prebuilt `RPi.GPIO` stays importable.
 

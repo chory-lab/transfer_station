@@ -4,8 +4,8 @@
 *.sh                       text eol=lf
 provisioning/payload/*     text eol=lf
 provisioning/config.env    text eol=lf
-requirements.txt           text eol=lf
-requirements.in            text eol=lf
+pyproject.toml             text eol=lf
+uv.lock                    text eol=lf
 # pi-app.env is sourced by bash on the build host; a trailing CR would end up
 # inside IMAGE_SHA256 and TIMEZONE and fail in ways that look like anything
 # but a line ending.
