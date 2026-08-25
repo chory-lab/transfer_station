@@ -176,5 +176,6 @@ jobs:
           gh release create "$TAG" \
               /tmp/transfer-station.img.xz /tmp/transfer-station.img.xz.sha256 \
               "${EXTRA[@]}" \
+              --target "$GITHUB_SHA" \
               --title "Ready-to-flash Pi image" \
               --notes "CI-audited image. Flash directly; do not apply Raspberry Pi Imager customisation."
