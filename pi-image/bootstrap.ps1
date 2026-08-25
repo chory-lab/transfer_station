@@ -147,8 +147,31 @@ if ((Get-FileHash -Algorithm SHA256 -LiteralPath $Image).Hash.ToLowerInvariant()
 }
 
 Write-Host '>> writing and verifying the audited image'
-& $Imager --cli $Image "\\.\PHYSICALDRIVE$($Disk.Number)"
-if ($LASTEXITCODE -ne 0) { throw "Raspberry Pi Imager failed with exit code $LASTEXITCODE" }
+
+# rpi-imager.exe is a GUI-subsystem binary, so `&` launches it and returns
+# immediately. $LASTEXITCODE is then whatever the previous command left
+# behind -- 0 -- so the success check passed and this script reported a card
+# it had never written. Imager ships rpi-imager-cli.cmd for exactly this
+# reason; that wrapper's own comment reads "necessary because it is compiled
+# as GUI application, and Windows normally does not wait until those exit".
+$Target = "\\.\PHYSICALDRIVE$($Disk.Number)"
+$Before = (Get-Disk -Number $Disk.Number).Signature
+
+# Start-Process -Wait blocks whatever the subsystem, which is the same trick
+# the wrapper uses. Calling the exe directly avoids handing a path with
+# spaces through cmd's quoting rules, which breaks it.
+$proc = Start-Process -FilePath $Imager -Wait -PassThru -ArgumentList @('--cli', $Image, $Target)
+if ($proc.ExitCode -ne 0) {
+    throw "Raspberry Pi Imager failed with exit code $($proc.ExitCode)."
+}
+
+# Imager verifies its own write, but it cannot report a write it never
+# started. Writing an image always replaces the partition table, so an
+# unchanged disk signature means nothing reached the card.
+$After = (Get-Disk -Number $Disk.Number).Signature
+if ($Before -eq $After) {
+    throw 'Raspberry Pi Imager reported success but the disk is unchanged. Nothing was written.'
+}
 
 Write-Host ''
 Write-Host 'Done. Put the media in the Pi and switch it on.' -ForegroundColor Green
