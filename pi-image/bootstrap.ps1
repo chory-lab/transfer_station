@@ -198,7 +198,21 @@ if ($Before -eq $After) {
 }
 
 Write-Host ''
-Write-Host 'Done. Put the media in the Pi and switch it on.' -ForegroundColor Green
-Write-Host '  UI:  http://192.168.10.1:5000'
-Write-Host '  SSH: ssh chorylab@192.168.10.1'
+Write-Host 'Almost done. NOTHING on the Pi link hands out addresses, so this PC must' -ForegroundColor Green
+Write-Host 'be given a static address before the Pi is reachable:' -ForegroundColor Green
+Write-Host ''
+Write-Host '  1. Connect this PC to the Pi with an Ethernet cable.'
+Write-Host '  2. Find the wired adapter, then set a static address (replace "Ethernet"'
+Write-Host '     with the name Get-NetAdapter shows for the wired adapter):'
+Write-Host ''
+Write-Host '       Get-NetAdapter'
+Write-Host '       New-NetIPAddress -InterfaceAlias Ethernet -IPAddress 192.168.10.2 -PrefixLength 24'
+Write-Host ''
+Write-Host '     No gateway, no DNS. Any 192.168.10.x except .1 works. Leave Wi-Fi alone'
+Write-Host '     for internet. Undo later with:'
+Write-Host '       Remove-NetIPAddress -InterfaceAlias Ethernet -IPAddress 192.168.10.2'
+Write-Host ''
+Write-Host '  3. Put the media in the Pi and switch it on. The Pi answers at:'
+Write-Host '       UI:  http://192.168.10.1:5000'
+Write-Host '       SSH: ssh chorylab@192.168.10.1'
 Write-Warning 'This branch image currently uses the build credential (default: changeme).'

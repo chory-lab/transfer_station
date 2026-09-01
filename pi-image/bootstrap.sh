@@ -115,8 +115,29 @@ else
 fi
 
 echo
-echo "Done. Put the media in the Pi and switch it on."
-echo "  UI:  http://192.168.10.1:5000"
-echo "  SSH: ssh chorylab@192.168.10.1"
+echo "Almost done. NOTHING on the Pi link hands out addresses, so this machine"
+echo "must be given a static address before the Pi is reachable:"
+echo
+echo "  1. Connect this machine to the Pi with an Ethernet cable."
+echo "  2. Set a static address on the wired adapter:"
+if [ "$OS" = Linux ]; then
+    echo
+    echo "       ip -br link                                          # find the wired interface"
+    echo "       sudo ip addr add 192.168.10.2/24 dev eth0            # eth0 = that interface"
+    echo
+    echo "     No gateway, no DNS. Any 192.168.10.x except .1 works. Undo later with:"
+    echo "       sudo ip addr del 192.168.10.2/24 dev eth0"
+else
+    echo
+    echo "       networksetup -listallhardwareports                   # find the wired interface"
+    echo "       sudo ifconfig en5 192.168.10.2/24                    # en5 = that interface"
+    echo
+    echo "     No gateway, no DNS. Any 192.168.10.x except .1 works. Undo later with:"
+    echo "       sudo ipconfig set en5 DHCP"
+fi
+echo
+echo "  3. Put the media in the Pi and switch it on. The Pi answers at:"
+echo "       UI:  http://192.168.10.1:5000"
+echo "       SSH: ssh chorylab@192.168.10.1"
 echo
 echo "This branch image currently uses the build credential (default: changeme)."

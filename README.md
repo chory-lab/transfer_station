@@ -43,13 +43,42 @@ On macOS, install
 the script uses it to write and verify the selected external disk. Linux uses
 the standard <code>lsblk</code>, <code>xz</code>, and <code>dd</code> tools.
 
-<h3>Then</h3>
+<h3>Then: wire up the controller PC</h3>
 
 The script asks which removable device to erase, downloads the audited sdm
-image, verifies its checksum, and writes it. Put the media in the Pi and
-switch it on. <b>No internet is needed on the Pi.</b> Configure the
-controller PC's Ethernet adapter as <code>192.168.10.2/24</code> with no
-gateway; the Pi comes up at:
+image, verifies its checksum, and writes it. <b>No internet is needed on the
+Pi.</b>
+
+The Pi is reachable only over a private wired link, and <b>nothing on that
+link hands out addresses</b>, so the controller PC's wired adapter must be
+given a static address. Connect an Ethernet cable between the PC and the Pi,
+then give the PC's wired adapter any address in <code>192.168.10.0/24</code>
+except <code>192.168.10.1</code> (the Pi itself) &mdash; the convention is
+<code>192.168.10.2</code> &mdash; with <b>no gateway and no DNS</b>. Leave
+the PC's Wi-Fi or other adapters alone so it keeps its own internet.
+
+Windows (Administrator PowerShell; replace <code>Ethernet</code> with the
+wired adapter name shown by <code>Get-NetAdapter</code>):
+
+```powershell
+New-NetIPAddress -InterfaceAlias Ethernet -IPAddress 192.168.10.2 -PrefixLength 24
+```
+
+macOS (replace <code>en5</code> with the wired interface from
+<code>networksetup -listallhardwareports</code>):
+
+```bash
+sudo ifconfig en5 192.168.10.2/24
+```
+
+Linux (replace <code>eth0</code> with the wired interface from
+<code>ip -br link</code>):
+
+```bash
+sudo ip addr add 192.168.10.2/24 dev eth0
+```
+
+The Pi then comes up at:
 
 ```
 http://192.168.10.1:5000        ssh chorylab@192.168.10.1
