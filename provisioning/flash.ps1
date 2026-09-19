@@ -103,15 +103,55 @@ if ($cfg['PI_PASSWORD_B64']) {
         [Convert]::FromBase64String($cfg['PI_PASSWORD_B64']))
 }
 
+# Imager moved its install directory from "Raspberry Pi Imager" to
+# "Raspberry Pi Ltd\Imager", so a hardcoded guess reports the CLI as missing on
+# a machine that plainly has it. Ask Windows first; this mirrors Find-Imager in
+# bootstrap.ps1.
+function Find-Imager {
+    $cmd = Get-Command rpi-imager -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+
+    $appPaths = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\rpi-imager.exe',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\rpi-imager.exe'
+    )
+    foreach ($key in $appPaths) {
+        $entry = (Get-ItemProperty -LiteralPath $key -ErrorAction SilentlyContinue).'(default)'
+        if ($entry -and (Test-Path -LiteralPath $entry)) { return $entry }
+    }
+
+    $uninstall = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    foreach ($key in $uninstall) {
+        foreach ($app in (Get-ItemProperty $key -ErrorAction SilentlyContinue |
+                          Where-Object { $_.DisplayName -like '*Raspberry Pi Imager*' })) {
+            if (-not $app.InstallLocation) { continue }
+            $exe = Join-Path $app.InstallLocation 'rpi-imager.exe'
+            if (Test-Path -LiteralPath $exe) { return $exe }
+        }
+    }
+
+    # Last resort: the layouts we have actually seen, newest first.
+    $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, "$env:LOCALAPPDATA\Programs") |
+             Where-Object { $_ }
+    foreach ($root in $roots) {
+        foreach ($leaf in @('Raspberry Pi Ltd\Imager', 'Raspberry Pi Imager')) {
+            $exe = Join-Path $root (Join-Path $leaf 'rpi-imager.exe')
+            if (Test-Path -LiteralPath $exe) { return $exe }
+        }
+    }
+    return $null
+}
+
 # --- optional flash via Raspberry Pi Imager CLI ---------------------------
 if ($Image) {
     if (-not $Device) { throw "-Image requires -Device (the Imager device index or path)" }
-    $imager = Get-Command 'rpi-imager' -ErrorAction SilentlyContinue
+    $imager = Find-Imager
     if (-not $imager) {
-        $candidate = "$env:ProgramFiles\Raspberry Pi Imager\rpi-imager.exe"
-        if (Test-Path $candidate) { $imager = $candidate } else {
-            throw "Raspberry Pi Imager CLI not found. Flash the card manually, then re-run with -BootDrive only."
-        }
+        throw "Raspberry Pi Imager CLI not found. Flash the card manually, then re-run with -BootDrive only."
     }
     Write-Warning "About to ERASE device '$Device'."
     $confirm = Read-Host "Type the device again to confirm"
@@ -263,12 +303,35 @@ if ($openssl -and $cfg['PI_PASSWORD']) {
 Write-Host ""
 Write-Host "Card ready." -ForegroundColor Green
 Write-Host ""
-Write-Host "  1. Boot the Pi plugged into a router/switch WITH INTERNET."
+if ($Bundle) {
+    Write-Host "  1. Boot the Pi. The card carries an offline bundle, so stage B"
+    Write-Host "     installs with no network at all."
+} else {
+    Write-Host "  1. Boot the Pi plugged into a router/switch WITH INTERNET."
+    Write-Host "     The eth0 link below has no gateway and no DNS by design, so it"
+    Write-Host "     cannot be that network. Run bootstrap.ps1 instead of this script"
+    Write-Host "     to stage a bundle and skip the connected boot entirely."
+}
 Write-Host "     Two automatic reboots follow (stage A: offline setup, stage B: packages)."
 Write-Host "     Stage B takes a few minutes; watch it on an HDMI display if you like."
 Write-Host "  2. When it settles, move the Pi to the isolated switch."
 Write-Host "     UI:  http://$($cfg['ETH_ADDRESS']):$($cfg['SERVER_PORT'])"
 Write-Host "     SSH: ssh $($cfg['PI_USER'])@$($cfg['ETH_ADDRESS'])"
 Write-Host ""
+
+# The example has to sit on ETH_ADDRESS's own subnet. This used to hardcode
+# 192.168.10.2 while interpolating ETH_PREFIX from config.env, so it began
+# contradicting the address printed two lines above it the first time
+# ETH_ADDRESS was changed.
+$controller = $null
+if ([string]$cfg['ETH_ADDRESS'] -match '^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$') {
+    $subnet = $Matches[1]
+    $last   = [int]$Matches[2]
+    $controller = "$subnet." + $(if ($last -eq 2) { '3' } else { '2' })
+}
 Write-Host "  Set your controller PC's NIC to a static address on the same subnet,"
-Write-Host "  e.g. 192.168.10.2/$($cfg['ETH_PREFIX']), with no gateway."
+if ($controller) {
+    Write-Host "  e.g. $controller/$($cfg['ETH_PREFIX']), with no gateway."
+} else {
+    Write-Host "  matching $($cfg['ETH_ADDRESS'])/$($cfg['ETH_PREFIX']), with no gateway."
+}
