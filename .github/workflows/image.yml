@@ -6,10 +6,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Runners are pinned like every other input. ubuntu-latest moved past 24.04
+# and dropped qemu-user-static, which the image and chroot jobs install.
 jobs:
   static:
     name: static analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +54,7 @@ jobs:
 
   flash-linux:
     name: flash pipeline (linux)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -67,7 +69,7 @@ jobs:
 
   motor-server:
     name: motor server command path
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -109,7 +111,7 @@ jobs:
 
   pipeline-rpios:
     name: provisioning on real Raspberry Pi OS (chroot)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -144,7 +146,7 @@ jobs:
 
   bundle:
     name: build the offline dependency bundle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     timeout-minutes: 60

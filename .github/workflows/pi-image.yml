@@ -17,10 +17,12 @@ on:
         type: boolean
         default: false
 
+# Runners are pinned like every other input. ubuntu-latest moved past 24.04
+# and dropped qemu-user-static, which the image and chroot jobs install.
 jobs:
   lint:
     name: manifest and scripts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -127,7 +129,7 @@ jobs:
 
   build:
     name: build the image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     needs: [lint, macos-flasher]
     permissions:
