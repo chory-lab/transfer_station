@@ -27,13 +27,15 @@ jobs:
       - name: shell syntax
         run: bash -n pi-image/*.sh pi-image/tests/*.sh
 
-      - name: PowerShell flasher parses
+      - name: PowerShell scripts parse
         shell: pwsh
         run: |
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path ./pi-image/bootstrap.ps1), [ref]$null, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.ToString() }; exit 1 }
+          foreach ($script in './pi-image/bootstrap.ps1', './pi-image/update-pi.ps1') {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $script), [ref]$null, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { $errors | ForEach-Object { $_.ToString() }; exit 1 }
+          }
 
       - name: shellcheck
         run: |
@@ -82,6 +84,9 @@ jobs:
 
       - name: README uses the sdm image flashers
         run: bash pi-image/tests/test_bootstrap.sh
+
+      - name: update-pi installs, rolls back and refuses dependency changes
+        run: bash pi-image/tests/test_apply_update.sh
 
       - name: the rendered unit is valid
         run: |

@@ -99,5 +99,24 @@ boot layout and the no-gateway/no-DNS static network profile.
 - Needs `qemu-user-static` binfmt for aarch64 when building on x86.
 - The venv is built under emulation, so `RPi.GPIO` is checked by spec rather
   than imported — it raises on non-Pi hardware by design.
-- Updating a deployed Pi means either re-flashing or copying files over SSH.
-  SSH is enabled precisely so re-flashing is not the only option.
+- An update that changes Python dependencies (`pyproject.toml`/`uv.lock`)
+  needs a new image: the Pi has no internet to install packages.
+  `update-pi` refuses such an update.
+
+## Updating a running Pi
+
+[`update-pi.ps1`](update-pi.ps1) (Windows) and [`update-pi.sh`](update-pi.sh)
+(macOS/Linux) copy the app code from a checkout to the Pi over SSH. The Pi
+needs no internet. They upload the app files with
+[`apply-update.sh`](apply-update.sh) and run it on the Pi, which:
+
+1. refuses if `pyproject.toml` or `uv.lock` differ from the Pi's copy,
+2. backs up the installed app (without the venv) to
+   `~/transfer_station-backups/`, keeping the newest 5,
+3. installs the files and restarts the service,
+4. waits up to 30 s for `GET /position` to answer, and if it does not, puts
+   the old files back and restarts again.
+
+The files sent are listed in both wrappers: `A4988.py`, `api_step_motor.py`,
+`templates/`, plus `pyproject.toml` and `uv.lock` for the dependency check.
+Add to both lists if the app gains a file.

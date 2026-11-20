@@ -88,6 +88,25 @@ This branch currently uses the image build credential. Until the
 <code>PI_PASSWORD</code> repository secret is configured and a new image is
 published, the password is <code>changeme</code>. Change it after login.
 
+<h3>Updating a running Pi</h3>
+
+To install new code on a Pi that is already set up, without re-flashing it,
+pull the repo on the controller PC wired to the Pi and run, from the top of
+the repo:
+
+```powershell
+git pull
+.\pi-image\update-pi.ps1
+```
+
+On macOS or Linux, run <code>bash pi-image/update-pi.sh</code> instead. Enter
+the Pi password when asked (up to three times: upload, login, and
+<code>sudo</code> to restart the server). The script backs up the code on the
+Pi, installs the new code and restarts the server. If the server does not come
+back up, it puts the old code back. Updates that change Python dependencies
+need a new image instead; the script says so. See
+<a href="pi-image/README.md#updating-a-running-pi">pi-image/README.md</a>.
+
 <blockquote>
 The image targets a Pi 4 Model B and works from SD or USB mass storage when
 the Pi EEPROM permits USB boot. Do not apply Raspberry Pi Imager OS
