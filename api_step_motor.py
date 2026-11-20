@@ -33,6 +33,21 @@ my_motor = A4988.A4988Nema(direction, step, (11,9,10), "A4988", cache)
 
 GPIO.setup(EN_pin,GPIO.OUT) # set enable pin as output
 
+# Go Left / Go Right drive until the limit switch at that end is pressed. This
+# is only the most steps a move may take before giving up. The full stroke is
+# nominally 26000 half-steps, but the motor has lost steps on the way, so allow
+# twice that: a healthy move stops at its switch long before reaching it.
+MAX_TRAVEL_STEPS = 52000
+
+# HTTP status for each way a move can fail
+FAILURE_STATUS = {
+    'busy': 409,
+    A4988.STOPPED: 409,
+    A4988.COMPLETED: 500,  # used every step without reaching the switch
+    A4988.SWITCH_FAULT: 500,
+    A4988.ERROR: 500,
+}
+
 cache.set('motor_stop', 'False')
 
 opened_page = cache.get('has_opened_page')
@@ -57,7 +72,7 @@ def index():
         try:
             step_num = int(request.form['step_num'])         
         except:
-            step_num = 26000
+            step_num = MAX_TRAVEL_STEPS
         try:
             step_delay = float(request.form['step_delay'])
         except:
@@ -68,36 +83,67 @@ def index():
             step_delay = 0.00125
         
         #go left till end button
-        if request.form.get('go_left') == 'Go Left' or request.get_data() == b'go_left':
-            string = move_test(False, step_num, step_delay)
-            return render_template('buttons.html')
+        if request.get_data() == b'go_left':
+            return as_json(*travel_to_end(False, step_num, step_delay))
+        if request.form.get('go_left') == 'Go Left':
+            return show(*travel_to_end(False, step_num, step_delay))
         
         #go right till end button
-        if request.form.get('go_right') == "Go Right" or request.get_data() == b'go_right': 
-            string = move_test(True, step_num, step_delay)
-            return render_template('buttons.html')
+        if request.get_data() == b'go_right':
+            return as_json(*travel_to_end(True, step_num, step_delay))
+        if request.form.get('go_right') == "Go Right": 
+            return show(*travel_to_end(True, step_num, step_delay))
         
-        #button
+        #button: a set number of steps, still stopping at a limit switch
         if request.form.get('run_motor') == 'Run Motor':
-            string = move_test(direction, step_num, step_delay)
-            return render_template('buttons.html')
+            outcome = move_test(direction, step_num, step_delay)
+            if outcome['result'] in (A4988.COMPLETED, A4988.LIMIT):
+                return show(outcome, 200)
+            return show(outcome, FAILURE_STATUS[outcome['result']])
         
     elif request.method == 'GET':        
         return render_template('buttons.html')            
+
+def travel_to_end(clockwise, step_num, step_delay):
+    """ Drive to the end of the rail. Succeeds only when that end's limit
+    switch confirms the cart arrived. Returns (body, http_status). """
+    end = 'right' if clockwise else 'left'
+    outcome = move_test(clockwise, step_num, step_delay)
+    if outcome['result'] == A4988.LIMIT:
+        outcome['result'] = 'reached_' + end
+        return outcome, 200
+    if outcome['result'] == A4988.COMPLETED:
+        outcome['result'] = 'short_of_' + end
+    return outcome, FAILURE_STATUS.get(outcome['result'], 500)
+
+def as_json(outcome, http_status):
+    return jsonify(outcome), http_status
+
+def show(outcome, http_status):
+    message = 'Move {}: {} steps'.format(outcome['result'], outcome['steps'])
+    return render_template('buttons.html', message=message), http_status
 
 @app.route('/status')
 def status():
     state = cache.get('motor_moving')
     return state
 
+@app.route('/position')
+def position():
+    return jsonify(moving=string_to_bool[cache.get('motor_moving')] is True,
+                   at_left=A4988.at_limit(A4988.LIMIT_LEFT_PIN),
+                   at_right=A4988.at_limit(A4988.LIMIT_RIGHT_PIN))
+
 @app.route('/move_test')
 def move_test(direction, step_num, step_delay):
     motor_moving = string_to_bool[cache.get('motor_moving')]
         
     if motor_moving:
-        return "move_test already running"    
+        return {'result': 'busy', 'steps': 0}
     else:
         cache.set('motor_moving', 'True')
+        # A Stop pressed while idle would otherwise cancel this move at once
+        cache.set('motor_stop', 'False')
         ###########################
         # Actual motor control
         ###########################
@@ -105,7 +151,7 @@ def move_test(direction, step_num, step_delay):
         GPIO.output(EN_pin,GPIO.LOW) # pull enable to low to enable motor
         
         print("running motor")
-        my_motor.motor_go(direction, # True=Clockwise, False=Counter-Clockwise
+        result, steps = my_motor.motor_go(direction, # True=Clockwise, False=Counter-Clockwise
                         "Half" , # Step type (Full,Half,1/4,1/8,1/16,1/32)
                         step_num, # number of steps
                         step_delay, # step delay [sec]
@@ -114,8 +160,9 @@ def move_test(direction, step_num, step_delay):
         GPIO.output(EN_pin,GPIO.HIGH)
         
         cache.set('motor_moving', 'False')
+        print("move ended: {} after {} steps".format(result, steps))
         
-        return "Motor Running"
+        return {'result': result, 'steps': steps}
     
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

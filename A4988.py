@@ -8,14 +8,39 @@ import redis
 
 GPIO.setmode(GPIO.BCM)
 
-# Use commented out only in even microswitch are connected to GPIO pins 4 and 17
-# switch_pin = 4 #microswitch pin
-# GPIO.setup(switch_pin, GPIO.IN) #set switch as input
-
-# switch_pin_2 = 17
-# GPIO.setup(switch_pin_2, GPIO.IN)
-
 string_to_bool = {'True':True, 'False': False, None: None}
+
+# Limit switches, one at each end of the rail. Each is wired COM -> GND and
+# NC -> GPIO (see README), so it reads LOW while closed and HIGH once the
+# striker opens it. A broken or unplugged wire also reads HIGH, so it stops
+# the cart instead of letting it drive into the end of the rail.
+LIMIT_RIGHT_PIN = 17  # Hamilton end, reached by clockwise (go_right) moves
+LIMIT_LEFT_PIN = 4    # incubator end, reached by counter-clockwise (go_left) moves
+LIMIT_PIN = {True: LIMIT_RIGHT_PIN, False: LIMIT_LEFT_PIN}
+
+# A press must read HIGH this many times in a row, this far apart, so a
+# noise spike from the motor wiring can't end a move early.
+LIMIT_CONFIRM_READS = 3
+LIMIT_CONFIRM_INTERVAL = 0.001  # seconds
+
+for _pin in (LIMIT_LEFT_PIN, LIMIT_RIGHT_PIN):
+    GPIO.setup(_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# How a move ended, as returned by A4988Nema.motor_go
+LIMIT = 'limit'                # the switch in the direction of travel was hit
+COMPLETED = 'completed'        # every requested step ran without hitting it
+STOPPED = 'stopped'            # Stop Motor or Ctrl-C
+SWITCH_FAULT = 'switch_fault'  # both switches read pressed: a wiring fault
+ERROR = 'error'                # unexpected exception
+
+
+def at_limit(pin):
+    """ True when the limit switch on `pin` is pressed (or its wire is broken) """
+    for _ in range(LIMIT_CONFIRM_READS):
+        if GPIO.input(pin) != GPIO.HIGH:
+            return False
+        time.sleep(LIMIT_CONFIRM_INTERVAL)
+    return True
 
 class StopMotorInterrupt(Exception):
     """ Stop the motor """
@@ -106,7 +131,17 @@ class A4988Nema(object):
          (6) initdelay, type=float, default=1mS, help= Intial delay after
          GPIO pins initialized but before motor is moved.
 
+         The move ends early when the limit switch at the end the motor is
+         heading toward is pressed. The switch at the other end is ignored,
+         so the cart can always drive away from it.
+
+         Returns (result, steps_taken), where result is one of LIMIT,
+         COMPLETED, STOPPED, SWITCH_FAULT or ERROR.
         """
+        limit_pin = LIMIT_PIN[bool(clockwise)]
+        result = ERROR
+        steps_taken = 0
+
         # setup GPIO
         GPIO.setup(self.direction_pin, GPIO.OUT)
         GPIO.setup(self.step_pin, GPIO.OUT)
@@ -117,31 +152,41 @@ class A4988Nema(object):
         try:
             # dict resolution
             self.resolution_set(steptype)
-            time.sleep(initdelay)
-            
-            #not(string_to_bool[r.get('motor_stop')]) and 
-            for i in range(steps):
-                stop_motor = string_to_bool[self.cache.get('motor_stop')]
 
-                #use commented out only in event switch is wired up to GPIO pins 4 and 17
-                #if(GPIO.input(4) == 0 and GPIO.input(17) == 0 and stop_motor != True):
-                
-                if(stop_motor != True): 
-                    GPIO.output(self.step_pin, True)
-                    time.sleep(stepdelay)
-                    GPIO.output(self.step_pin, False)
-                    time.sleep(stepdelay)
-                    if verbose:
-                        print("Step count {}".format(i+1), end="\r", flush=True)
-                else:
+            # Only a wiring fault can press both ends at once
+            if at_limit(LIMIT_LEFT_PIN) and at_limit(LIMIT_RIGHT_PIN):
+                print("Both limit switches read pressed: check the switch wiring")
+                result = SWITCH_FAULT
+                return result, steps_taken
+
+            time.sleep(initdelay)
+
+            result = COMPLETED
+            for i in range(steps):
+                if string_to_bool[self.cache.get('motor_stop')]:
                     self.cache.set('motor_stop', 'False')
                     raise StopMotorInterrupt
 
+                if at_limit(limit_pin):
+                    result = LIMIT
+                    break
+
+                GPIO.output(self.step_pin, True)
+                time.sleep(stepdelay)
+                GPIO.output(self.step_pin, False)
+                time.sleep(stepdelay)
+                steps_taken += 1
+                if verbose:
+                    print("Step count {}".format(steps_taken), end="\r", flush=True)
+
         except KeyboardInterrupt:
+            result = STOPPED
             print("User Keyboard Interrupt : RpiMotorLib:")
         except StopMotorInterrupt:
+            result = STOPPED
             print("Stop Motor Interrupt : RpiMotorLib: ")
         except Exception as motor_error:
+            result = ERROR
             print(sys.exc_info()[0])
             print(motor_error)
             print("RpiMotorLib  : Unexpected error:")
@@ -149,14 +194,15 @@ class A4988Nema(object):
             # print report status
             if verbose:
                 print("\nRpiMotorLib, Motor Run finished, Details:.\n")
+                print("Result = {}".format(result))
                 print("Motor type = {}".format(self.motor_type))
                 print("Clockwise = {}".format(clockwise))
                 print("Step Type = {}".format(steptype))
-                print("Number of steps = {}".format(steps))
+                print("Number of steps = {} of {}".format(steps_taken, steps))
                 print("Step Delay = {}".format(stepdelay))
                 print("Intial delay = {}".format(initdelay))
                 print("Size of turn in degrees = {}"
-                      .format(degree_calc(steps, steptype)))
+                      .format(degree_calc(steps_taken, steptype)))
         finally:
             # cleanup
             GPIO.output(self.step_pin, False)
@@ -164,6 +210,7 @@ class A4988Nema(object):
             if self.mode_pins != False:
                 for pin in self.mode_pins:
                     GPIO.output(pin, False)
+        return result, steps_taken
                     
 def degree_calc(steps, steptype):
     """ calculate and returns size of turn in degree

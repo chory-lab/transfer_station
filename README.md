@@ -182,6 +182,63 @@ Pin Index:
 
 Any GPIO can be used as they are all programmable
 
+<h4>Limit Switches</h4>
+
+A microswitch at each end of the rail tells the Pi when the cart has arrived.
+The cart can lose steps, so step counting alone cannot place it; Go Left and
+Go Right now drive until the switch at that end is pressed.
+
+| Switch | Rail end | Reached by | NC → Pi pin | COM → Pi pin |
+|---|---|---|---|---|
+| Left | incubator | `go_left` (counter-clockwise) | 7 (GPIO4) | 9 (Ground) |
+| Right | Hamilton | `go_right` (clockwise) | 11 (GPIO17) | 14 (Ground) |
+
+All of the Pi's ground pins are connected together, so any free one works;
+these are the ones closest to each signal pin. Pin 6 is left for the A4988.
+Leave each switch's NO terminal unconnected. No resistors are needed: the code
+turns on the Pi's internal pull-up resistors.
+
+- **Use NC, not NO.** Wired to NC, the circuit is closed until the striker
+  presses the lever, so the pin reads LOW normally and HIGH at the end of
+  travel. A broken or unplugged wire also reads HIGH, so a wiring fault stops
+  the cart. Wired to NO, a broken wire would look like "not there yet" and the
+  cart would drive into the end of the rail.
+- **Never connect a switch to 5V.** Pi GPIO pins are 3.3V only. Wired as
+  above, there is no external voltage in the switch circuit at all.
+- Route the switch wires away from the motor wires, or twist each switch's
+  pair together. The code ignores presses shorter than about 3 ms, but if
+  false stops persist, solder a 100 nF capacitor across each switch's COM and
+  NC terminals.
+
+How the code uses the switches:
+
+- A move stops at the switch in its direction of travel. The switch at the
+  other end is ignored, so the cart can always drive away from it.
+- `go_left` / `go_right` succeed (HTTP 200, `{"result": "reached_left", "steps": N}`)
+  only when the switch confirms arrival. If 52000 half-steps (about twice the
+  full stroke) pass without it, the move fails with `short_of_left` /
+  `short_of_right` and HTTP 500, and `hamilton_transfer.py` raises
+  `TransferStationError` so the run stops before the robot reaches for a
+  plate that is not there.
+- If both switches read pressed at once, it can only be a wiring fault: the
+  motor will not move (`switch_fault`).
+- `steps` in each response is how far the cart went before its switch
+  tripped. If that number creeps up over time, the rail is losing more steps.
+- `GET /position` returns `{"moving": ..., "at_left": ..., "at_right": ...}`.
+
+Checking the wiring after installing the switches:
+
+1. With the cart in the middle of the rail, open `http://192.168.10.1:5000/position`.
+   Both `at_left` and `at_right` must be `false`. `true` means that switch's
+   wire is loose or on NO instead of NC.
+2. Press each lever by hand and reload. Only the matching side should turn
+   `true`. If the wrong side changes, the two NC wires are swapped.
+3. Press Go Left in the web UI and keep a hand on the power. The cart should
+   stop when the striker presses the left lever, and the page shows the step
+   count. Repeat with Go Right.
+4. Check that each lever is not pressed to the end of its travel when the
+   cart stops. If it is, move the switch mount slightly away from the cart.
+
 <h3>Transfer Station System</h3>
 The system is composed of 4 core components, these consist of the tray, tray platform, step motor rail system, and the mount. All components were printed with PLA plastic, and default 3D printer settings. Screws used were the default ones that come with the Hamilton Star, and the default bolts that came with the incubator mount. 
 
